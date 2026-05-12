@@ -126,6 +126,8 @@ npm run playwright:install
 - Video processing jobs are enqueued in BullMQ using `REDIS_URL`.
 - `npm run worker:opusclip` starts the worker and calls the Phase 4 OpusClip Playwright skeleton.
 - Real OpusClip selectors are TODO in `src/lib/opusclip/selectors.ts`; keep the `OPUSCLIP_ENABLE_REAL_*` flags disabled until those selectors are implemented and tested manually.
+- `/videos/:id` now shows clip previews and editable title, caption, and hashtag metadata when clip rows exist.
+- `POST /api/clips/:id/generate-caption` uses a safe placeholder caption service. If `OPENAI_API_KEY` is missing, it returns and stores a clear placeholder response instead of calling an external API.
 - `POST /api/clips/:id/upload` queues a TikTok-only placeholder upload job.
 - API handlers do not run long-lived automation work.
 - Playwright automation belongs in worker/service modules and is not production-ready yet.
