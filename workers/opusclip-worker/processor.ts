@@ -1,18 +1,10 @@
 import type { Job } from "bullmq";
-import type { Prisma } from "@prisma/client";
 import { prisma } from "../../src/lib/prisma";
+import { createJobLogger, serializeError } from "../../src/lib/observability/logger";
 import { OPUSCLIP_MAX_ATTEMPTS } from "../../src/lib/queue/video-queue";
 import type { VideoProcessingJobData } from "../../src/lib/queue/video-queue";
 import { runOpusClipAutomation } from "../../src/lib/opusclip";
 import type { OpusClipFailureArtifact } from "../../src/lib/opusclip";
-
-type LogInput = {
-  jobId: string;
-  userId: string;
-  level: "info" | "warning" | "error";
-  message: string;
-  metadata?: Prisma.InputJsonValue;
-};
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -31,22 +23,15 @@ function getOpusClipFailureArtifact(error: unknown) {
   return undefined;
 }
 
-async function createLog({ jobId, userId, level, message, metadata }: LogInput) {
-  await prisma.log.create({
-    data: {
-      jobId,
-      userId,
-      level,
-      message,
-      metadata,
-    },
-  });
-}
-
 export async function processOpusClipVideoJob(job: Job<VideoProcessingJobData>) {
   const { dbJobId, userId, videoId, sourceUrl, sourceStoragePath } = job.data;
   const attempt = job.attemptsMade + 1;
   const maxAttempts = typeof job.opts.attempts === "number" ? job.opts.attempts : OPUSCLIP_MAX_ATTEMPTS;
+  const logger = createJobLogger({
+    component: "opusclip-worker",
+    userId,
+    jobId: dbJobId,
+  });
 
   await prisma.job.update({
     where: {
@@ -70,19 +55,13 @@ export async function processOpusClipVideoJob(job: Job<VideoProcessingJobData>) 
     },
   });
 
-  await createLog({
-    jobId: dbJobId,
-    userId,
-    level: "info",
-    message: "OpusClip worker started simulated processing.",
-    metadata: {
+  await logger.info("OpusClip worker started simulated processing.", {
       phase: 2,
       queueJobId: job.id,
       attempt,
       maxAttempts,
       sourceUrl,
       sourceStoragePath,
-    },
   });
 
   try {
@@ -93,15 +72,9 @@ export async function processOpusClipVideoJob(job: Job<VideoProcessingJobData>) 
       throw new Error("Simulated OpusClip worker failure.");
     }
 
-    await createLog({
-      jobId: dbJobId,
-      userId,
-      level: "info",
-      message: "Calling OpusClip Playwright automation skeleton.",
-      metadata: {
+    await logger.info("Calling OpusClip Playwright automation skeleton.", {
         phase: 4,
         videoId,
-      },
     });
 
     const automationResult = await runOpusClipAutomation({
@@ -136,19 +109,13 @@ export async function processOpusClipVideoJob(job: Job<VideoProcessingJobData>) 
       },
     });
 
-    await createLog({
-      jobId: dbJobId,
-      userId,
-      level: "info",
-      message: "OpusClip worker completed simulated processing.",
-      metadata: {
+    await logger.info("OpusClip worker completed simulated processing.", {
         phase: 4,
         videoId,
         generatedClipCount: automationResult.clips.length,
         downloadedClipCount: automationResult.downloadedClips.length,
         automationSimulated: automationResult.simulated,
         status: "ready_to_upload",
-      },
     });
 
     return {
@@ -186,21 +153,16 @@ export async function processOpusClipVideoJob(job: Job<VideoProcessingJobData>) 
       },
     });
 
-    await createLog({
-      jobId: dbJobId,
-      userId,
-      level: "error",
-      message: willRetry ? "OpusClip worker attempt failed; BullMQ will retry." : "OpusClip worker failed after final attempt.",
-      metadata: {
+    await logger.error(willRetry ? "OpusClip worker attempt failed; BullMQ will retry." : "OpusClip worker failed after final attempt.", {
         phase: 2,
         attempt,
         maxAttempts,
         willRetry,
         errorMessage,
+        error: serializeError(error),
         currentUrl: artifact?.currentUrl,
         screenshotPath: artifact?.screenshotPath,
         errorPath: artifact?.errorPath,
-      },
     });
 
     throw error;

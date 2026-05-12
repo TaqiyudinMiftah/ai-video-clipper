@@ -1,6 +1,7 @@
 import { Queue } from "bullmq";
 import type { JobsOptions } from "bullmq";
 import { prisma } from "@/lib/prisma";
+import { logEvent, serializeError } from "@/lib/observability/logger";
 import { createQueueRedisConnection } from "@/lib/queue/redis";
 
 export const VIDEO_PROCESSING_QUEUE_NAME = "video-processing";
@@ -65,16 +66,16 @@ export async function enqueueVideoProcessingJob({
     },
   });
 
-  await prisma.log.create({
-    data: {
-      userId,
-      jobId: dbJob.id,
-      level: "info",
-      message: "Video processing job record created.",
-      metadata: {
-        phase: 2,
-        videoId,
-      },
+  await logEvent({
+    userId,
+    jobId: dbJob.id,
+    level: "info",
+    event: "video.job.created",
+    component: "video-queue",
+    message: "Video processing job record created.",
+    metadata: {
+      phase: 2,
+      videoId,
     },
   });
 
@@ -94,19 +95,19 @@ export async function enqueueVideoProcessingJob({
       },
     );
 
-    await prisma.log.create({
-      data: {
-        userId,
-        jobId: dbJob.id,
-        level: "info",
-        message: "Video processing job enqueued in BullMQ.",
-        metadata: {
-          phase: 2,
-          queueName: VIDEO_PROCESSING_QUEUE_NAME,
-          queueJobId: queueJob.id,
-          attempts: OPUSCLIP_MAX_ATTEMPTS,
-          retryDelayMs: OPUSCLIP_RETRY_DELAY_MS,
-        },
+    await logEvent({
+      userId,
+      jobId: dbJob.id,
+      level: "info",
+      event: "video.job.enqueued",
+      component: "video-queue",
+      message: "Video processing job enqueued in BullMQ.",
+      metadata: {
+        phase: 2,
+        queueName: VIDEO_PROCESSING_QUEUE_NAME,
+        queueJobId: queueJob.id,
+        attempts: OPUSCLIP_MAX_ATTEMPTS,
+        retryDelayMs: OPUSCLIP_RETRY_DELAY_MS,
       },
     });
 
@@ -135,17 +136,18 @@ export async function enqueueVideoProcessingJob({
       },
     });
 
-    await prisma.log.create({
-      data: {
-        userId,
-        jobId: dbJob.id,
-        level: "error",
-        message: "Failed to enqueue video processing job in BullMQ.",
-        metadata: {
-          phase: 2,
-          queueName: VIDEO_PROCESSING_QUEUE_NAME,
-          errorMessage,
-        },
+    await logEvent({
+      userId,
+      jobId: dbJob.id,
+      level: "error",
+      event: "video.job.enqueue_failed",
+      component: "video-queue",
+      message: "Failed to enqueue video processing job in BullMQ.",
+      metadata: {
+        phase: 2,
+        queueName: VIDEO_PROCESSING_QUEUE_NAME,
+        errorMessage,
+        error: serializeError(error),
       },
     });
 

@@ -2,7 +2,7 @@
 
 MVP web application for submitting source videos, tracking OpusClip processing tasks, reviewing generated clips, and preparing TikTok uploads through Composio.
 
-This repository is currently through **Phase 6**:
+This repository is currently through **Phase 7**:
 
 - Next.js App Router scaffold
 - TypeScript configuration
@@ -14,6 +14,7 @@ This repository is currently through **Phase 6**:
 - BullMQ workers for OpusClip processing and TikTok upload
 - Supabase-backed storage abstraction for source videos and clips
 - Composio TikTok upload service boundary
+- Structured logging, retry controls, worker health check, and troubleshooting notes
 
 Real OpusClip selectors still need to be filled in manually. TikTok upload is wired through Composio, but requires valid Composio/TikTok configuration before it can run successfully.
 
@@ -81,6 +82,12 @@ Real OpusClip selectors still need to be filled in manually. TikTok upload is wi
    ```
 
 11. Open `http://localhost:3000/dashboard`.
+
+12. Check queue and worker health when debugging:
+
+   ```bash
+   npm run worker:health
+   ```
 
 ## OpusClip Session Setup
 
@@ -151,9 +158,20 @@ npm run build
 npm run prisma:studio
 npm run worker:opusclip
 npm run worker:upload
+npm run worker:health
 npm run opusclip:login
 npm run playwright:install
 ```
+
+## Troubleshooting
+
+- `Failed to enqueue ... Check REDIS_URL and Redis availability`: start Redis, verify `REDIS_URL`, then run `npm run worker:health`.
+- `COMPOSIO_API_KEY is missing`: add `COMPOSIO_API_KEY` to the worker environment and restart `npm run worker:upload`.
+- `Clip must have a storage path`: the clip has not been stored yet. Confirm the OpusClip worker produced a clip row with `storage_path`.
+- `SUPABASE_SERVICE_ROLE_KEY is required for storage operations`: set Supabase server-side storage env vars and never expose the service role key to frontend code.
+- `EPERM` while running `next build` on Windows: stop any running Next dev/build process and rerun the build so `.next` files can be cleaned.
+- OpusClip failures with screenshots: inspect `OPUSCLIP_ARTIFACTS_DIR` for screenshot and error JSON artifacts.
+- Upload keeps failing after retries: inspect `upload_targets.error_message`, `logs`, and the Composio dashboard connection state.
 
 ## Phase Notes
 
@@ -168,6 +186,16 @@ npm run playwright:install
 - `POST /api/clips/:id/upload` validates the clip storage path, creates an `UploadTarget`, and queues a TikTok upload job.
 - `npm run worker:upload` starts the dedicated Composio TikTok upload worker with default concurrency `1`.
 - The upload worker retries failed TikTok uploads up to 3 attempts with a 5 minute fixed delay.
+- `npm run worker:health` prints Redis ping status, BullMQ queue counts, and database job counts.
+- API JSON request bodies use Zod validation and return field-level validation details.
+- Dashboard and video ledger pages show live database-backed error states and retry buttons.
 - API handlers do not run long-lived automation work.
 - Playwright automation belongs in worker/service modules and is not production-ready yet.
 - Composio credentials must stay server-side and must not be exposed to the frontend.
+
+## TODO Before Production
+
+- Real OpusClip selectors: replace placeholder selectors in `src/lib/opusclip/selectors.ts` with tested, stable selectors and keep CAPTCHA/rate-limit guardrails intact.
+- Real Composio TikTok action mapping: confirm the exact `TIKTOK_UPLOAD_VIDEO` arguments, toolkit version, connection ID, publish behavior, and response shape for the target Composio account.
+- Production deployment: add real auth, secrets management, managed Redis/Postgres, worker process supervision, migrations, backups, and observability dashboards.
+- Compliance review: review OpusClip and TikTok/Composio terms, consent, rate limits, content policy, and data retention before external or high-volume use.

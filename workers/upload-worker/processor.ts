@@ -1,47 +1,18 @@
 import type { Job } from "bullmq";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../../src/lib/prisma";
+import { createJobLogger, serializeError, toJsonValue } from "../../src/lib/observability/logger";
 import { getComposioTikTokConfig } from "../../src/lib/composio/config";
 import { uploadClipToTikTok } from "../../src/lib/composio";
 import { getStorageService } from "../../src/lib/storage";
 import { TIKTOK_UPLOAD_MAX_ATTEMPTS } from "../../src/lib/queue/upload-queue";
 import type { ClipUploadJobData } from "../../src/lib/queue/upload-queue";
 
-type LogInput = {
-  jobId: string;
-  userId: string;
-  level: "info" | "warning" | "error";
-  message: string;
-  metadata?: Prisma.InputJsonValue;
-};
-
 type ClipForUpload = Prisma.ClipGetPayload<{
   include: {
     video: true;
   };
 }>;
-
-function toJsonValue(value: unknown): Prisma.InputJsonValue {
-  try {
-    return JSON.parse(JSON.stringify(value ?? null)) as Prisma.InputJsonValue;
-  } catch {
-    return {
-      value: String(value),
-    };
-  }
-}
-
-async function createLog({ jobId, userId, level, message, metadata }: LogInput) {
-  await prisma.log.create({
-    data: {
-      jobId,
-      userId,
-      level,
-      message,
-      metadata,
-    },
-  });
-}
 
 async function updateVideoStatusAfterSuccessfulUpload(videoId: string) {
   const [totalClips, uploadedClips] = await prisma.$transaction([
@@ -73,6 +44,11 @@ export async function processClipUploadJob(job: Job<ClipUploadJobData>) {
   const { dbJobId, userId, clipId, uploadTargetId, platform } = job.data;
   const attempt = job.attemptsMade + 1;
   const maxAttempts = typeof job.opts.attempts === "number" ? job.opts.attempts : TIKTOK_UPLOAD_MAX_ATTEMPTS;
+  const logger = createJobLogger({
+    component: "upload-worker",
+    userId,
+    jobId: dbJobId,
+  });
 
   await prisma.job.update({
     where: {
@@ -134,12 +110,7 @@ export async function processClipUploadJob(job: Job<ClipUploadJobData>) {
       },
     });
 
-    await createLog({
-      jobId: dbJobId,
-      userId,
-      level: "info",
-      message: "TikTok upload worker started.",
-      metadata: {
+    await logger.info("TikTok upload worker started.", {
         phase: 6,
         queueJobId: job.id,
         attempt,
@@ -147,7 +118,6 @@ export async function processClipUploadJob(job: Job<ClipUploadJobData>) {
         clipId,
         uploadTargetId,
         platform,
-      },
     });
 
     if (platform !== "tiktok") {
@@ -163,18 +133,12 @@ export async function processClipUploadJob(job: Job<ClipUploadJobData>) {
 
     await job.updateProgress(35);
 
-    await createLog({
-      jobId: dbJobId,
-      userId,
-      level: "info",
-      message: "Generated signed clip URL for Composio upload staging.",
-      metadata: {
+    await logger.info("Generated signed clip URL for Composio upload staging.", {
         phase: 6,
         clipId,
         uploadTargetId,
         storagePath: clip.storagePath,
         expiresInSeconds: signedUrl.expiresInSeconds,
-      },
     });
 
     const uploadResult = await uploadClipToTikTok({
@@ -225,19 +189,13 @@ export async function processClipUploadJob(job: Job<ClipUploadJobData>) {
       },
     });
 
-    await createLog({
-      jobId: dbJobId,
-      userId,
-      level: "info",
-      message: "TikTok upload completed through Composio.",
-      metadata: {
+    await logger.info("TikTok upload completed through Composio.", {
         phase: 6,
         clipId,
         uploadTargetId,
         uploadedUrl: uploadResult.uploadedUrl,
         composioFile: uploadResult.fileUpload,
         response: toJsonValue(uploadResult.platformResponse),
-      },
     });
 
     await job.updateProgress(100);
@@ -298,12 +256,7 @@ export async function processClipUploadJob(job: Job<ClipUploadJobData>) {
       },
     });
 
-    await createLog({
-      jobId: dbJobId,
-      userId,
-      level: "error",
-      message: willRetry ? "TikTok upload attempt failed; BullMQ will retry." : "TikTok upload failed after final attempt.",
-      metadata: {
+    await logger.error(willRetry ? "TikTok upload attempt failed; BullMQ will retry." : "TikTok upload failed after final attempt.", {
         phase: 6,
         attempt,
         maxAttempts,
@@ -311,7 +264,7 @@ export async function processClipUploadJob(job: Job<ClipUploadJobData>) {
         clipId,
         uploadTargetId,
         errorMessage,
-      },
+        error: serializeError(error),
     });
 
     throw error;

@@ -1,6 +1,7 @@
 import { Queue } from "bullmq";
 import type { JobsOptions } from "bullmq";
 import { prisma } from "@/lib/prisma";
+import { logEvent, serializeError } from "@/lib/observability/logger";
 import { createQueueRedisConnection } from "@/lib/queue/redis";
 
 export const CLIP_UPLOAD_QUEUE_NAME = "clip-upload";
@@ -59,18 +60,18 @@ export async function enqueueClipUploadJob({ userId, clipId, uploadTargetId }: U
     },
   });
 
-  await prisma.log.create({
-    data: {
-      userId,
-      jobId: dbJob.id,
-      level: "info",
-      message: "TikTok upload job record created.",
-      metadata: {
-        phase: 6,
-        clipId,
-        uploadTargetId,
-        platform: "tiktok",
-      },
+  await logEvent({
+    userId,
+    jobId: dbJob.id,
+    level: "info",
+    event: "upload.job.created",
+    component: "upload-queue",
+    message: "TikTok upload job record created.",
+    metadata: {
+      phase: 6,
+      clipId,
+      uploadTargetId,
+      platform: "tiktok",
     },
   });
 
@@ -90,19 +91,19 @@ export async function enqueueClipUploadJob({ userId, clipId, uploadTargetId }: U
       },
     );
 
-    await prisma.log.create({
-      data: {
-        userId,
-        jobId: dbJob.id,
-        level: "info",
-        message: "TikTok upload job enqueued in BullMQ.",
-        metadata: {
-          phase: 6,
-          queueName: CLIP_UPLOAD_QUEUE_NAME,
-          queueJobId: queueJob.id,
-          attempts: TIKTOK_UPLOAD_MAX_ATTEMPTS,
-          retryDelayMs: TIKTOK_UPLOAD_RETRY_DELAY_MS,
-        },
+    await logEvent({
+      userId,
+      jobId: dbJob.id,
+      level: "info",
+      event: "upload.job.enqueued",
+      component: "upload-queue",
+      message: "TikTok upload job enqueued in BullMQ.",
+      metadata: {
+        phase: 6,
+        queueName: CLIP_UPLOAD_QUEUE_NAME,
+        queueJobId: queueJob.id,
+        attempts: TIKTOK_UPLOAD_MAX_ATTEMPTS,
+        retryDelayMs: TIKTOK_UPLOAD_RETRY_DELAY_MS,
       },
     });
 
@@ -131,18 +132,19 @@ export async function enqueueClipUploadJob({ userId, clipId, uploadTargetId }: U
       },
     });
 
-    await prisma.log.create({
-      data: {
-        userId,
-        jobId: dbJob.id,
-        level: "error",
-        message: "Failed to enqueue TikTok upload job in BullMQ.",
-        metadata: {
-          phase: 6,
-          queueName: CLIP_UPLOAD_QUEUE_NAME,
-          uploadTargetId,
-          errorMessage,
-        },
+    await logEvent({
+      userId,
+      jobId: dbJob.id,
+      level: "error",
+      event: "upload.job.enqueue_failed",
+      component: "upload-queue",
+      message: "Failed to enqueue TikTok upload job in BullMQ.",
+      metadata: {
+        phase: 6,
+        queueName: CLIP_UPLOAD_QUEUE_NAME,
+        uploadTargetId,
+        errorMessage,
+        error: serializeError(error),
       },
     });
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentUser } from "@/lib/auth";
+import { uploadClipRequestSchema, validationErrorResponse } from "@/lib/api/validation";
 import { enqueueClipUploadJob } from "@/lib/queue/upload-queue";
 import { prisma } from "@/lib/prisma";
 
@@ -14,12 +15,14 @@ type RouteContext = {
 export async function POST(request: NextRequest, { params }: RouteContext) {
   const user = await requireCurrentUser();
   const { id } = await params;
-  const body = await request.json().catch(() => null);
-  const platform = String(body?.platform ?? "tiktok").trim().toLowerCase();
+  const body = (await request.json().catch(() => ({}))) ?? {};
+  const parsed = uploadClipRequestSchema.safeParse(body);
 
-  if (platform !== "tiktok") {
-    return NextResponse.json({ error: "MVP upload target is TikTok only." }, { status: 400 });
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error);
   }
+
+  const platform = parsed.data.platform;
 
   const clip = await prisma.clip.findFirst({
     where: {

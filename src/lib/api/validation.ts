@@ -1,3 +1,6 @@
+import { NextResponse } from "next/server";
+import { z } from "zod";
+
 export function isValidUrl(value: string) {
   try {
     const url = new URL(value);
@@ -44,4 +47,61 @@ export function isAllowedVideoFile(file: File) {
 
 export function getAllowedVideoFileTypesLabel() {
   return allowedVideoExtensions.map((extension) => `.${extension}`).join(", ");
+}
+
+const httpUrlSchema = z
+  .string()
+  .trim()
+  .url()
+  .refine((value) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, "URL must use http or https.");
+
+export const createVideoUrlRequestSchema = z.strictObject({
+  sourceType: z.literal("url"),
+  sourceUrl: httpUrlSchema,
+  title: z.string().trim().max(200).optional().nullable(),
+  platformTargets: z.array(z.literal("tiktok")).optional().default(["tiktok"]),
+});
+
+export const createVideoFileFieldsSchema = z.strictObject({
+  sourceType: z.literal("file"),
+  title: z.string().trim().max(200).optional().nullable(),
+  platform: z.literal("tiktok").optional().default("tiktok"),
+});
+
+export const updateClipMetadataRequestSchema = z
+  .strictObject({
+    title: z.string().trim().max(160).optional().nullable(),
+    caption: z.string().trim().max(2200).optional().nullable(),
+    hashtags: z.array(z.string().trim().min(1).max(80)).max(30).optional(),
+  })
+  .refine((value) => value.title !== undefined || value.caption !== undefined || value.hashtags !== undefined, {
+    message: "At least one metadata field is required.",
+  });
+
+export const uploadClipRequestSchema = z.strictObject({
+  platform: z.literal("tiktok").optional().default("tiktok"),
+});
+
+export function formatZodError(error: z.ZodError) {
+  return error.issues.map((issue) => ({
+    path: issue.path.length ? issue.path.join(".") : "body",
+    message: issue.message,
+  }));
+}
+
+export function validationErrorResponse(error: z.ZodError) {
+  return NextResponse.json(
+    {
+      error: "Invalid request body.",
+      details: formatZodError(error),
+    },
+    { status: 400 },
+  );
 }

@@ -34,6 +34,7 @@ export function ClipUploadPanel({ clipId, storagePath, uploadTargets }: ClipUplo
   const [error, setError] = useState("");
   const latestTikTokUpload = uploadTargets.find((target) => target.platform === "tiktok");
   const hasActiveUpload = ["queued", "uploading"].includes(latestTikTokUpload?.uploadStatus ?? "");
+  const uploadFailed = latestTikTokUpload?.uploadStatus === "failed";
   const busy = isUploading || isPending;
   const canUpload = Boolean(storagePath) && !hasActiveUpload && !busy;
 
@@ -115,7 +116,7 @@ export function ClipUploadPanel({ clipId, storagePath, uploadTargets }: ClipUplo
         disabled={!canUpload}
         className="rounded-2xl bg-[color:var(--ember)] px-5 py-3 font-black text-[#fffaf0] transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_rgba(232,85,47,0.24)] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 disabled:hover:shadow-none"
       >
-        {hasActiveUpload ? "Upload queued" : busy ? "Queueing..." : "Upload to TikTok"}
+        {hasActiveUpload ? "Upload queued" : busy ? "Queueing..." : uploadFailed ? "Retry TikTok upload" : "Upload to TikTok"}
       </button>
 
       {message ? <p className="rounded-2xl border border-[#6c8b53] bg-[#e6efdf] px-4 py-3 text-sm font-bold text-[#39502d]">{message}</p> : null}

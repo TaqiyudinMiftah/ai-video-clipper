@@ -4,6 +4,7 @@ import { AppShell } from "@/components/app-shell";
 import { ClipMetadataEditor } from "@/components/clip-metadata-editor";
 import { ClipPreview } from "@/components/clip-preview";
 import { ClipUploadPanel } from "@/components/clip-upload-panel";
+import { RetryVideoButton } from "@/components/retry-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -175,11 +176,7 @@ export default async function VideoDetailPage({ params }: VideoDetailPageProps) 
               Back to video list
             </Link>
             {["failed", "cancelled"].includes(video.status) ? (
-              <form action={`/api/videos/${video.id}/retry`} method="post">
-                <button className="w-full rounded-2xl bg-[color:var(--ember)] px-5 py-3 font-black text-[#fffaf0] transition hover:-translate-y-0.5" type="submit">
-                  Retry task
-                </button>
-              </form>
+              <RetryVideoButton id={video.id} label="Retry task" />
             ) : null}
           </div>
         </section>

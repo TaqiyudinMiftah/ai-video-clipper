@@ -99,6 +99,9 @@ model Video {
 
   @@index([userId])
   @@index([status])
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@index([userId, updatedAt])
   @@map("videos")
 }
 
@@ -124,6 +127,8 @@ model Clip {
   @@index([userId])
   @@index([videoId])
   @@index([status])
+  @@index([userId, status])
+  @@index([videoId, status])
   @@map("clips")
 }
 
@@ -147,6 +152,8 @@ model UploadTarget {
   @@index([clipId])
   @@index([platform])
   @@index([uploadStatus])
+  @@index([userId, uploadStatus])
+  @@index([clipId, platform, uploadStatus])
   @@map("upload_targets")
 }
 
@@ -174,6 +181,8 @@ model Job {
   @@index([clipId])
   @@index([jobType])
   @@index([status])
+  @@index([userId, jobType, status])
+  @@index([userId, createdAt])
   @@map("jobs")
 }
 
@@ -191,5 +200,7 @@ model Log {
   @@index([jobId])
   @@index([userId])
   @@index([level])
+  @@index([jobId, createdAt])
+  @@index([userId, createdAt])
   @@map("logs")
 }

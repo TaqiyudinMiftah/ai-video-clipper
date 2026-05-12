@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "node:crypto";
 import { requireCurrentUser } from "@/lib/auth";
 import {
+  createVideoFileFieldsSchema,
+  createVideoUrlRequestSchema,
   getAllowedVideoFileTypesLabel,
   getFileExtension,
   isAllowedVideoFile,
-  isValidUrl,
+  validationErrorResponse,
 } from "@/lib/api/validation";
 import { enqueueVideoProcessingJob } from "@/lib/queue/video-queue";
 import { prisma } from "@/lib/prisma";
@@ -60,19 +62,20 @@ async function enqueueVideoOrFail(video: { id: string; userId: string; sourceUrl
   }
 }
 
-async function createUrlVideoTask(userId: string, body: Record<string, unknown>) {
-  const sourceUrl = String(body.sourceUrl ?? "").trim();
+async function createUrlVideoTask(userId: string, body: unknown) {
+  const parsed = createVideoUrlRequestSchema.safeParse(body);
 
-  if (!isValidUrl(sourceUrl)) {
-    return NextResponse.json({ error: "A valid HTTP or HTTPS sourceUrl is required." }, { status: 400 });
+  if (!parsed.success) {
+    return validationErrorResponse(parsed.error);
   }
 
+  const { sourceUrl, title } = parsed.data;
   const video = await prisma.video.create({
     data: {
       userId,
       sourceType: "url",
       sourceUrl,
-      title: String(body.title ?? "").trim() || null,
+      title: title?.trim() || null,
       status: "queued",
     },
   });
@@ -101,6 +104,16 @@ async function createUrlVideoTask(userId: string, body: Record<string, unknown>)
 }
 
 async function createFileVideoTask(userId: string, formData: FormData) {
+  const fields = createVideoFileFieldsSchema.safeParse({
+    sourceType: String(formData.get("sourceType") ?? "file"),
+    title: String(formData.get("title") ?? "").trim() || null,
+    platform: String(formData.get("platform") ?? "tiktok"),
+  });
+
+  if (!fields.success) {
+    return validationErrorResponse(fields.error);
+  }
+
   const sourceFile = formData.get("sourceFile");
 
   if (!(sourceFile instanceof File) || sourceFile.size === 0) {
@@ -117,7 +130,7 @@ async function createFileVideoTask(userId: string, formData: FormData) {
   const videoId = randomUUID();
   const extension = getFileExtension(sourceFile.name);
   const sourceStoragePath = `users/${userId}/videos/${videoId}/source.${extension}`;
-  const title = String(formData.get("title") ?? "").trim() || sourceFile.name;
+  const title = fields.data.title?.trim() || sourceFile.name;
 
   const video = await prisma.video.create({
     data: {
@@ -234,20 +247,14 @@ export async function POST(request: NextRequest) {
 
   if (contentType.includes("multipart/form-data")) {
     const formData = await request.formData();
-    const sourceType = String(formData.get("sourceType") ?? "file");
-
-    if (sourceType !== "file") {
-      return NextResponse.json({ error: "multipart/form-data submissions must use sourceType=file." }, { status: 400 });
-    }
-
     return createFileVideoTask(user.id, formData);
   }
 
   const body = await request.json().catch(() => null);
 
-  if (!body || typeof body !== "object" || body.sourceType !== "url") {
-    return NextResponse.json({ error: "Use sourceType=url for JSON submissions or sourceType=file for uploads." }, { status: 400 });
+  if (!body) {
+    return NextResponse.json({ error: "A JSON request body is required." }, { status: 400 });
   }
 
-  return createUrlVideoTask(user.id, body as Record<string, unknown>);
+  return createUrlVideoTask(user.id, body);
 }
