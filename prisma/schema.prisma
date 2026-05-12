@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SourceType {
+  url
+  file
+}
+
+enum VideoStatus {
+  pending
+  queued
+  uploading_to_opusclip
+  processing_in_opusclip
+  downloading_clips
+  storing_clips
+  generating_caption
+  ready_to_upload
+  uploading_to_tiktok
+  completed
+  failed
+  cancelled
+}
+
+enum ClipStatus {
+  created
+  stored
+  ready_to_upload
+  uploading
+  uploaded
+  failed
+}
+
+enum UploadStatus {
+  queued
+  uploading
+  completed
+  failed
+  cancelled
+}
+
+enum JobType {
+  opusclip_process
+  upload_tiktok
+  generate_caption
+}
+
+enum JobStatus {
+  pending
+  queued
+  active
+  completed
+  failed
+  cancelled
+}
+
+enum LogLevel {
+  info
+  warning
+  error
+}
+
+model User {
+  id            String         @id @default(uuid()) @db.Uuid
+  email         String         @unique
+  name          String?
+  videos        Video[]
+  clips         Clip[]
+  uploadTargets UploadTarget[]
+  jobs          Job[]
+  logs          Log[]
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Video {
+  id                String      @id @default(uuid()) @db.Uuid
+  userId            String      @map("user_id") @db.Uuid
+  sourceType        SourceType  @map("source_type")
+  sourceUrl         String?     @map("source_url")
+  sourceStoragePath String?     @map("source_storage_path")
+  title             String?
+  durationSeconds   Int?        @map("duration_seconds")
+  status            VideoStatus @default(pending)
+  errorMessage      String?     @map("error_message")
+  retryCount        Int         @default(0) @map("retry_count")
+  clips             Clip[]
+  jobs              Job[]
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt         DateTime    @default(now()) @map("created_at")
+  updatedAt         DateTime    @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("videos")
+}
+
+model Clip {
+  id             String         @id @default(uuid()) @db.Uuid
+  videoId        String         @map("video_id") @db.Uuid
+  userId         String         @map("user_id") @db.Uuid
+  opusclipClipId String?        @map("opusclip_clip_id")
+  storagePath    String?        @map("storage_path")
+  previewUrl     String?        @map("preview_url")
+  durationSeconds Int?          @map("duration_seconds")
+  title          String?
+  caption        String?
+  hashtags       String[]       @default([])
+  status         ClipStatus     @default(created)
+  uploadTargets  UploadTarget[]
+  jobs           Job[]
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video          Video          @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([videoId])
+  @@index([status])
+  @@map("clips")
+}
+
+model UploadTarget {
+  id            String       @id @default(uuid()) @db.Uuid
+  clipId        String       @map("clip_id") @db.Uuid
+  userId        String       @map("user_id") @db.Uuid
+  platform      String
+  uploadStatus  UploadStatus @default(queued) @map("upload_status")
+  uploadedUrl   String?      @map("uploaded_url")
+  scheduledAt   DateTime?    @map("scheduled_at")
+  errorMessage  String?      @map("error_message")
+  retryCount    Int          @default(0) @map("retry_count")
+  clip          Clip         @relation(fields: [clipId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([clipId])
+  @@index([platform])
+  @@index([uploadStatus])
+  @@map("upload_targets")
+}
+
+model Job {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @map("user_id") @db.Uuid
+  videoId      String?   @map("video_id") @db.Uuid
+  clipId       String?   @map("clip_id") @db.Uuid
+  jobType      JobType   @map("job_type")
+  status       JobStatus @default(queued)
+  attempts     Int       @default(0)
+  maxAttempts  Int       @default(3) @map("max_attempts")
+  errorMessage String?   @map("error_message")
+  startedAt    DateTime? @map("started_at")
+  completedAt  DateTime? @map("completed_at")
+  logs         Log[]
+  clip         Clip?     @relation(fields: [clipId], references: [id], onDelete: SetNull)
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  video        Video?    @relation(fields: [videoId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([videoId])
+  @@index([clipId])
+  @@index([jobType])
+  @@index([status])
+  @@map("jobs")
+}
+
+model Log {
+  id        String   @id @default(uuid()) @db.Uuid
+  jobId     String?  @map("job_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  level     LogLevel
+  message   String
+  metadata  Json?
+  job       Job?     @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([jobId])
+  @@index([userId])
+  @@index([level])
+  @@map("logs")
+}
