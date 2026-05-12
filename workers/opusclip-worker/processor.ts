@@ -3,6 +3,8 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "../../src/lib/prisma";
 import { OPUSCLIP_MAX_ATTEMPTS } from "../../src/lib/queue/video-queue";
 import type { VideoProcessingJobData } from "../../src/lib/queue/video-queue";
+import { runOpusClipAutomation } from "../../src/lib/opusclip";
+import type { OpusClipFailureArtifact } from "../../src/lib/opusclip";
 
 type LogInput = {
   jobId: string;
@@ -19,6 +21,14 @@ function sleep(ms: number) {
 function getSimulationDelayMs() {
   const value = Number(process.env.OPUSCLIP_WORKER_SIMULATION_MS ?? "3000");
   return Number.isFinite(value) && value >= 0 ? value : 3000;
+}
+
+function getOpusClipFailureArtifact(error: unknown) {
+  if (error instanceof Error && error.cause && typeof error.cause === "object") {
+    return error.cause as OpusClipFailureArtifact;
+  }
+
+  return undefined;
 }
 
 async function createLog({ jobId, userId, level, message, metadata }: LogInput) {
@@ -83,6 +93,25 @@ export async function processOpusClipVideoJob(job: Job<VideoProcessingJobData>) 
       throw new Error("Simulated OpusClip worker failure.");
     }
 
+    await createLog({
+      jobId: dbJobId,
+      userId,
+      level: "info",
+      message: "Calling OpusClip Playwright automation skeleton.",
+      metadata: {
+        phase: 4,
+        videoId,
+      },
+    });
+
+    const automationResult = await runOpusClipAutomation({
+      jobId: dbJobId,
+      userId,
+      videoId,
+      sourceUrl,
+      sourceStoragePath,
+    });
+
     await job.updateProgress(100);
 
     await prisma.video.update({
@@ -113,8 +142,11 @@ export async function processOpusClipVideoJob(job: Job<VideoProcessingJobData>) 
       level: "info",
       message: "OpusClip worker completed simulated processing.",
       metadata: {
-        phase: 2,
+        phase: 4,
         videoId,
+        generatedClipCount: automationResult.clips.length,
+        downloadedClipCount: automationResult.downloadedClips.length,
+        automationSimulated: automationResult.simulated,
         status: "ready_to_upload",
       },
     });
@@ -126,6 +158,7 @@ export async function processOpusClipVideoJob(job: Job<VideoProcessingJobData>) 
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown OpusClip worker error.";
+    const artifact = getOpusClipFailureArtifact(error);
     const willRetry = attempt < maxAttempts;
 
     await prisma.video.update({
@@ -164,6 +197,9 @@ export async function processOpusClipVideoJob(job: Job<VideoProcessingJobData>) 
         maxAttempts,
         willRetry,
         errorMessage,
+        currentUrl: artifact?.currentUrl,
+        screenshotPath: artifact?.screenshotPath,
+        errorPath: artifact?.errorPath,
       },
     });
 

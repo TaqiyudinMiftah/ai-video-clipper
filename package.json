@@ -8,6 +8,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "worker:opusclip": "tsx -r dotenv/config workers/opusclip-worker/index.ts",
+    "opusclip:login": "tsx -r dotenv/config scripts/opusclip-login.ts",
+    "playwright:install": "playwright install chromium",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
@@ -19,10 +21,12 @@
     "dotenv": "^17.4.2",
     "ioredis": "^5.10.1",
     "next": "^16.2.2",
+    "playwright": "^1.60.0",
     "react": "^19.2.1",
     "react-dom": "^19.2.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@tailwindcss/postcss": "^4.1.17",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",

@@ -73,6 +73,40 @@ Real Playwright automation, Redis/BullMQ workers, storage upload, and Composio e
 
 10. Open `http://localhost:3000/dashboard`.
 
+## OpusClip Session Setup
+
+Phase 4 adds the Playwright skeleton only. It does not contain production-ready selectors and does not bypass CAPTCHA, rate limits, or any OpusClip security controls.
+
+1. Install the Chromium browser used by Playwright:
+
+   ```bash
+   npm run playwright:install
+   ```
+
+2. Configure these values in `.env`:
+
+   ```bash
+   OPUSCLIP_LOGIN_URL=https://www.opus.pro/clip
+   OPUSCLIP_APP_URL=https://www.opus.pro/clip
+   OPUSCLIP_STORAGE_STATE_PATH=./playwright/.auth/opusclip.json
+   ```
+
+3. Run the manual login helper:
+
+   ```bash
+   npm run opusclip:login
+   ```
+
+4. Complete the normal user-owned login flow in the browser, then press Enter in the terminal to save `storageState`.
+
+5. Start the worker:
+
+   ```bash
+   npm run worker:opusclip
+   ```
+
+Failure artifacts are written under `OPUSCLIP_ARTIFACTS_DIR` and include a screenshot when a page is available plus a JSON error file with the current URL.
+
 ## Useful Commands
 
 ```bash
@@ -80,6 +114,8 @@ npm run typecheck
 npm run build
 npm run prisma:studio
 npm run worker:opusclip
+npm run opusclip:login
+npm run playwright:install
 ```
 
 ## Phase Notes
@@ -88,8 +124,9 @@ npm run worker:opusclip
 - File uploads currently support `.mp4`, `.mov`, and `.webm`.
 - Uploaded source videos are stored at `users/{userId}/videos/{videoId}/source.{ext}` and saved to `videos.source_storage_path`.
 - Video processing jobs are enqueued in BullMQ using `REDIS_URL`.
-- `npm run worker:opusclip` starts the Phase 2 worker skeleton and simulates OpusClip processing.
+- `npm run worker:opusclip` starts the worker and calls the Phase 4 OpusClip Playwright skeleton.
+- Real OpusClip selectors are TODO in `src/lib/opusclip/selectors.ts`; keep the `OPUSCLIP_ENABLE_REAL_*` flags disabled until those selectors are implemented and tested manually.
 - `POST /api/clips/:id/upload` queues a TikTok-only placeholder upload job.
 - API handlers do not run long-lived automation work.
-- Playwright automation belongs in worker/service modules in later phases.
+- Playwright automation belongs in worker/service modules and is not production-ready yet.
 - Composio credentials must stay server-side and must not be exposed to the frontend.
