@@ -30,7 +30,6 @@ function createHealthRedisConnection(connectionName: string) {
   return new IORedis(getRedisUrl(), {
     connectionName,
     connectTimeout: getTimeoutMs(),
-    enableOfflineQueue: false,
     maxRetriesPerRequest: 1,
   });
 }

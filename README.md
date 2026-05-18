@@ -39,21 +39,35 @@ Real OpusClip selectors still need to be filled in manually. TikTok upload is wi
    cp .env.example .env
    ```
 
-3. Update `DATABASE_URL` in `.env` to point at your local PostgreSQL database.
+3. Start local PostgreSQL and Redis with Docker:
 
-4. Generate Prisma Client:
+   ```bash
+   docker compose up -d
+   ```
+
+   The included compose file starts:
+
+   - PostgreSQL at `localhost:5432`
+   - Redis at `localhost:6379`
+
+4. Update `DATABASE_URL` in `.env` if you are not using the Docker defaults. For the included Docker setup, use:
+
+   ```bash
+   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ai_video_clipper
+   REDIS_URL=redis://localhost:6379
+   ```
+
+5. Generate Prisma Client:
 
    ```bash
    npm run prisma:generate
    ```
 
-5. Run the first migration:
+6. Run database migrations:
 
    ```bash
    npm run prisma:migrate
    ```
-
-6. Start Redis locally and verify `REDIS_URL` points to it.
 
 7. Configure storage:
 
