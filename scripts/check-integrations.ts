@@ -57,6 +57,16 @@ async function checkSupabase(): Promise<CheckResult> {
 }
 
 function checkOpusClip(): CheckResult {
+  if (process.env.OPUSCLIP_USE_API === "true") {
+    return {
+      name: "OpusClip API",
+      ok: hasValue(process.env.OPUSCLIP_API_KEY),
+      message: hasValue(process.env.OPUSCLIP_API_KEY)
+        ? "API path is enabled and OPUSCLIP_API_KEY is present. Restart the worker after env changes."
+        : "OPUSCLIP_USE_API=true but OPUSCLIP_API_KEY is missing.",
+    };
+  }
+
   const config = getOpusClipConfig();
   const sessionExists = existsSync(config.storageStatePath);
 

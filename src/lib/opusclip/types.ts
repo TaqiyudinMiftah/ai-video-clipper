@@ -9,23 +9,33 @@ export type OpusClipAutomationInput = OpusClipSource & {
   userId: string;
   videoId: string;
   jobId: string;
+  title?: string | null;
 };
 
 export type OpusClipAutomationSession = {
-  browser: Browser;
+  browser?: Browser | null;
   context: BrowserContext;
   page: Page;
 };
 
 export type OpusClipGeneratedClip = {
   opusclipClipId: string;
+  index?: number;
   title?: string;
   pageUrl?: string;
+  previewUrl?: string;
+  exportUrl?: string;
+  caption?: string;
+  hashtags?: string[];
+  durationSeconds?: number;
 };
 
 export type DownloadedOpusClip = {
   clip: OpusClipGeneratedClip;
-  filePath: string;
+  filePath?: string;
+  data?: Uint8Array;
+  contentType?: string;
+  fileName?: string;
 };
 
 export type OpusClipFailureArtifact = {

@@ -10,13 +10,14 @@ This repository is currently through **Phase 7**:
 - Prisma schema for core MVP records
 - Database-backed API route skeletons
 - Basic dashboard, video, and integration pages
-- Placeholder service boundaries for queue, storage, OpusClip automation, and Composio upload
+- Placeholder service boundaries for queue, storage, Playwright OpusClip automation, and Composio upload
 - BullMQ workers for OpusClip processing and TikTok upload
 - Supabase-backed storage abstraction for source videos and clips
+- Optional OpusClip API processing path for accounts with official API access
 - Composio TikTok upload service boundary
 - Structured logging, retry controls, worker health check, and troubleshooting notes
 
-Real OpusClip selectors still need to be filled in manually. TikTok upload is wired through Composio, but requires valid Composio/TikTok configuration before it can run successfully.
+Real Playwright OpusClip selectors still need to be filled in manually. If your OpusClip plan includes API access, enable the OpusClip API path for real clipping instead of the placeholder Playwright flow. TikTok upload is wired through Composio, but requires valid Composio/TikTok configuration before it can run successfully.
 
 ## Requirements
 
@@ -105,7 +106,7 @@ Real OpusClip selectors still need to be filled in manually. TikTok upload is wi
 
 ## OpusClip Session Setup
 
-Phase 4 adds the Playwright skeleton only. It does not contain production-ready selectors and does not bypass CAPTCHA, rate limits, or any OpusClip security controls.
+The Playwright path uses your own saved browser session. It does not bypass CAPTCHA, rate limits, or any OpusClip security controls. Treat this as an MVP/internal automation path because OpusClip UI changes can break selectors.
 
 1. Install the Chromium browser used by Playwright:
 
@@ -116,8 +117,8 @@ Phase 4 adds the Playwright skeleton only. It does not contain production-ready 
 2. Configure these values in `.env`:
 
    ```bash
-   OPUSCLIP_LOGIN_URL=https://www.opus.pro/clip
-   OPUSCLIP_APP_URL=https://www.opus.pro/clip
+   OPUSCLIP_LOGIN_URL=https://clip.opus.pro/dashboard
+   OPUSCLIP_APP_URL=https://clip.opus.pro/dashboard
    OPUSCLIP_STORAGE_STATE_PATH=./playwright/.auth/opusclip.json
    ```
 
@@ -136,6 +137,69 @@ Phase 4 adds the Playwright skeleton only. It does not contain production-ready 
    ```
 
 Failure artifacts are written under `OPUSCLIP_ARTIFACTS_DIR` and include a screenshot when a page is available plus a JSON error file with the current URL.
+
+### Real Playwright Clipping
+
+If you are not using the OpusClip API, enable the browser automation flags after you have a valid saved session:
+
+```bash
+OPUSCLIP_USE_API=false
+OPUSCLIP_REQUIRE_SAVED_SESSION=true
+OPUSCLIP_MOCK_CREATE_CLIP=false
+OPUSCLIP_HEADLESS=false
+OPUSCLIP_ENABLE_REAL_SUBMIT=true
+OPUSCLIP_ENABLE_REAL_WAIT=true
+OPUSCLIP_ENABLE_REAL_LIST=true
+OPUSCLIP_ENABLE_REAL_DOWNLOAD=true
+```
+
+Keep `OPUSCLIP_HEADLESS=false` for the first few runs so you can watch the browser and confirm the flow. After it works reliably, you can try `OPUSCLIP_HEADLESS=true`.
+
+Optional selector overrides are available when OpusClip changes UI copy or markup:
+
+```bash
+OPUSCLIP_UPLOAD_BUTTON_SELECTOR=
+OPUSCLIP_FILE_INPUT_SELECTOR=
+OPUSCLIP_URL_INPUT_SELECTOR=
+OPUSCLIP_SUBMIT_BUTTON_SELECTOR=
+OPUSCLIP_PROCESSING_COMPLETE_SELECTOR=
+OPUSCLIP_GENERATED_CLIP_CARD_SELECTOR=
+OPUSCLIP_CLIP_DOWNLOAD_BUTTON_SELECTOR=
+OPUSCLIP_NEW_PROJECT_BUTTON_SELECTOR=
+```
+
+The worker downloads private source files from Supabase Storage to a local temporary worker file, uploads that file through the OpusClip UI, waits for generated clips, downloads each clip, then uploads the resulting MP4 files back to Supabase Storage.
+
+## OpusClip API Setup
+
+Use this path when you want the worker to actually submit videos to OpusClip, wait for exportable clips, download the generated MP4 files, and store them back in Supabase Storage. OpusClip API access is available only for eligible OpusClip plans, so keep the Playwright skeleton disabled unless you have manually implemented and tested selectors.
+
+1. In OpusClip, generate an API key from the OpusClip dashboard if your plan includes API access.
+
+2. Configure server-side environment variables:
+
+   ```bash
+   OPUSCLIP_USE_API=true
+   OPUSCLIP_API_BASE_URL=https://api.opus.pro/api
+   OPUSCLIP_API_KEY=
+   OPUSCLIP_ORG_ID=
+   OPUSCLIP_API_POLL_INTERVAL_MS=30000
+   OPUSCLIP_API_MAX_WAIT_MS=1800000
+   OPUSCLIP_API_CLIP_DURATION_SECONDS=90
+   OPUSCLIP_API_CURATION_MODEL=ClipBasic
+   OPUSCLIP_API_SOURCE_LANG=auto
+   OPUSCLIP_MOCK_CREATE_CLIP=false
+   ```
+
+   `OPUSCLIP_ORG_ID` is optional unless your OpusClip account requires the `x-opus-org-id` header.
+
+3. Restart the OpusClip worker after changing `.env`:
+
+   ```bash
+   npm run worker:opusclip
+   ```
+
+4. Submit a video from `/videos/new`. For file uploads, the worker downloads the private source file from Supabase Storage, uploads it to OpusClip through the API upload-link flow, creates a clip project, polls exportable clips, downloads the generated clips, and stores those clips under `users/{userId}/videos/{videoId}/clips/{clipId}.mp4`.
 
 ## Composio TikTok Setup
 
@@ -183,6 +247,11 @@ npm run playwright:install
 - `COMPOSIO_API_KEY is missing`: add `COMPOSIO_API_KEY` to the worker environment and restart `npm run worker:upload`.
 - `Clip must have a storage path`: the clip has not been stored yet. Confirm the OpusClip worker produced a clip row with `storage_path`.
 - `SUPABASE_SERVICE_ROLE_KEY is required for storage operations`: set Supabase server-side storage env vars and never expose the service role key to frontend code.
+- `OPUSCLIP_API_KEY is required when OPUSCLIP_USE_API=true`: add your OpusClip API key to the worker environment and restart `npm run worker:opusclip`.
+- `OpusClip API completed without returning downloadable clips`: check OpusClip credits, API plan access, processing status in the OpusClip dashboard, and whether the video is supported by OpusClip.
+- `OpusClip session is not logged in`: rerun `npm run opusclip:login`, complete the normal login flow, save the session, then restart `npm run worker:opusclip`.
+- `Could not find an OpusClip upload button or file input`: run the worker headed with `OPUSCLIP_HEADLESS=false`, inspect the failure screenshot, then set `OPUSCLIP_UPLOAD_BUTTON_SELECTOR` or `OPUSCLIP_FILE_INPUT_SELECTOR`.
+- `OpusClip Playwright automation completed without storing clips`: inspect `OPUSCLIP_ARTIFACTS_DIR`, then tune `OPUSCLIP_GENERATED_CLIP_CARD_SELECTOR` or `OPUSCLIP_CLIP_DOWNLOAD_BUTTON_SELECTOR`.
 - `EPERM` while running `next build` on Windows: stop any running Next dev/build process and rerun the build so `.next` files can be cleaned.
 - OpusClip failures with screenshots: inspect `OPUSCLIP_ARTIFACTS_DIR` for screenshot and error JSON artifacts.
 - Upload keeps failing after retries: inspect `upload_targets.error_message`, `logs`, and the Composio dashboard connection state.
@@ -193,8 +262,9 @@ npm run playwright:install
 - File uploads currently support `.mp4`, `.mov`, and `.webm`.
 - Uploaded source videos are stored at `users/{userId}/videos/{videoId}/source.{ext}` and saved to `videos.source_storage_path`.
 - Video processing jobs are enqueued in BullMQ using `REDIS_URL`.
-- `npm run worker:opusclip` starts the worker and calls the Phase 4 OpusClip Playwright skeleton.
-- Real OpusClip selectors are TODO in `src/lib/opusclip/selectors.ts`; keep the `OPUSCLIP_ENABLE_REAL_*` flags disabled until those selectors are implemented and tested manually.
+- `npm run worker:opusclip` starts the worker and calls either the OpusClip API path (`OPUSCLIP_USE_API=true`) or Playwright browser automation.
+- The OpusClip API path creates a project, polls exportable clips, downloads generated MP4 files, uploads them to storage, and creates `Clip` records.
+- The Playwright path uses conservative fallback selectors plus optional `OPUSCLIP_*_SELECTOR` overrides. Keep concurrency at `1`.
 - `/videos/:id` now shows clip previews and editable title, caption, and hashtag metadata when clip rows exist.
 - `POST /api/clips/:id/generate-caption` uses a safe placeholder caption service. If `OPENAI_API_KEY` is missing, it returns and stores a clear placeholder response instead of calling an external API.
 - `POST /api/clips/:id/upload` validates the clip storage path, creates an `UploadTarget`, and queues a TikTok upload job.

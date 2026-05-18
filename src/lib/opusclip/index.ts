@@ -6,6 +6,7 @@ export {
   submitVideoToOpusClip,
   waitForProcessingComplete,
 } from "@/lib/opusclip/automation";
+export { isOpusClipApiEnabled, runOpusClipApiProcessing } from "@/lib/opusclip/api";
 export { getOpusClipConfig, hasSavedOpusClipSession } from "@/lib/opusclip/config";
 export type {
   DownloadedOpusClip,

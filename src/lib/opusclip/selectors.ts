@@ -1,8 +1,10 @@
 export const opusClipSelectors = {
-  uploadButton: "TODO_STABLE_UPLOAD_BUTTON_SELECTOR",
-  urlInput: "TODO_STABLE_URL_INPUT_SELECTOR",
-  submitButton: "TODO_STABLE_SUBMIT_BUTTON_SELECTOR",
-  processingCompleteIndicator: "TODO_STABLE_PROCESSING_COMPLETE_SELECTOR",
-  generatedClipCard: "TODO_STABLE_GENERATED_CLIP_CARD_SELECTOR",
-  clipDownloadButton: "TODO_STABLE_CLIP_DOWNLOAD_BUTTON_SELECTOR",
+  uploadButton: process.env.OPUSCLIP_UPLOAD_BUTTON_SELECTOR ?? "",
+  fileInput: process.env.OPUSCLIP_FILE_INPUT_SELECTOR ?? 'input[type="file"]',
+  urlInput: process.env.OPUSCLIP_URL_INPUT_SELECTOR ?? 'input[type="url"], input[placeholder*="http"], textarea[placeholder*="http"]',
+  submitButton: process.env.OPUSCLIP_SUBMIT_BUTTON_SELECTOR ?? "",
+  processingCompleteIndicator: process.env.OPUSCLIP_PROCESSING_COMPLETE_SELECTOR ?? "",
+  generatedClipCard: process.env.OPUSCLIP_GENERATED_CLIP_CARD_SELECTOR ?? "",
+  clipDownloadButton: process.env.OPUSCLIP_CLIP_DOWNLOAD_BUTTON_SELECTOR ?? "",
+  newProjectButton: process.env.OPUSCLIP_NEW_PROJECT_BUTTON_SELECTOR ?? "",
 } as const;
