@@ -48,7 +48,7 @@ export function VideoSubmitForm() {
 
     if (!response.ok) {
       setState("error");
-      setMessage(result.error ?? "Unable to create video task.");
+      setMessage([result.error, result.details].filter(Boolean).join(" ") || "Unable to create video task.");
       return;
     }
 

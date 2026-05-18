@@ -23,6 +23,7 @@ export function normalizeHashtags(value: unknown) {
 
 const allowedVideoExtensions = ["mp4", "mov", "webm"] as const;
 const allowedVideoMimeTypes = ["video/mp4", "video/quicktime", "video/webm", "video/mov"];
+const defaultMaxSourceVideoUploadMb = 50;
 
 export type AllowedVideoExtension = (typeof allowedVideoExtensions)[number];
 
@@ -47,6 +48,17 @@ export function isAllowedVideoFile(file: File) {
 
 export function getAllowedVideoFileTypesLabel() {
   return allowedVideoExtensions.map((extension) => `.${extension}`).join(", ");
+}
+
+export function getMaxSourceVideoUploadBytes() {
+  const value = Number(process.env.MAX_SOURCE_VIDEO_UPLOAD_MB ?? defaultMaxSourceVideoUploadMb);
+  const maxMb = Number.isFinite(value) && value > 0 ? value : defaultMaxSourceVideoUploadMb;
+
+  return maxMb * 1024 * 1024;
+}
+
+export function getMaxSourceVideoUploadLabel() {
+  return `${Math.round(getMaxSourceVideoUploadBytes() / 1024 / 1024)} MB`;
 }
 
 const httpUrlSchema = z

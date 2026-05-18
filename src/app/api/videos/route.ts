@@ -6,6 +6,8 @@ import {
   createVideoUrlRequestSchema,
   getAllowedVideoFileTypesLabel,
   getFileExtension,
+  getMaxSourceVideoUploadBytes,
+  getMaxSourceVideoUploadLabel,
   isAllowedVideoFile,
   validationErrorResponse,
 } from "@/lib/api/validation";
@@ -127,6 +129,15 @@ async function createFileVideoTask(userId: string, formData: FormData) {
     );
   }
 
+  if (sourceFile.size > getMaxSourceVideoUploadBytes()) {
+    return NextResponse.json(
+      {
+        error: `Source video is too large. Maximum upload size is ${getMaxSourceVideoUploadLabel()}. Compress the video, trim it, or raise MAX_SOURCE_VIDEO_UPLOAD_MB if your storage plan supports larger files.`,
+      },
+      { status: 400 },
+    );
+  }
+
   const videoId = randomUUID();
   const extension = getFileExtension(sourceFile.name);
   const sourceStoragePath = `users/${userId}/videos/${videoId}/source.${extension}`;
@@ -204,6 +215,7 @@ async function createFileVideoTask(userId: string, formData: FormData) {
     return NextResponse.json(
       {
         error: "Video task was created but the source file could not be uploaded. Check storage configuration.",
+        details: process.env.NODE_ENV === "development" ? errorMessage : undefined,
         videoId: video.id,
         status: "failed",
       },
