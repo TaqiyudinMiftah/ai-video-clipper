@@ -134,6 +134,45 @@ async function hasUpgradePlanModal(page: Page, timeoutMs = 750) {
   return hasVisibleLocator(upgradePlanIndicators(page), timeoutMs);
 }
 
+async function clickTopRightCloseControl(page: Page) {
+  const clicked = await page
+    .evaluate(() => {
+      const viewportWidth = window.innerWidth;
+      const controls = Array.from(document.querySelectorAll<HTMLElement>('button, [role="button"]'));
+      const candidates = controls
+        .map((element) => ({
+          element,
+          label: `${element.getAttribute("aria-label") ?? ""} ${element.textContent ?? ""}`.trim(),
+          rect: element.getBoundingClientRect(),
+        }))
+        .filter(({ label, rect }) => {
+          const isVisible = rect.width > 0 && rect.height > 0;
+          const isTopRight = rect.top >= 0 && rect.top <= 140 && rect.left >= viewportWidth - 220;
+          const isSmallControl = rect.width <= 96 && rect.height <= 96;
+          const looksLikeClose = /close|×|x/i.test(label);
+
+          return isVisible && isTopRight && isSmallControl && (looksLikeClose || label.length <= 2);
+        })
+        .sort((a, b) => b.rect.left - a.rect.left || a.rect.top - b.rect.top);
+
+      const target = candidates[0]?.element;
+
+      if (!target) {
+        return false;
+      }
+
+      target.click();
+      return true;
+    })
+    .catch(() => false);
+
+  if (clicked) {
+    await page.waitForTimeout(750);
+  }
+
+  return clicked;
+}
+
 async function dismissUpgradePlanModal(page: Page) {
   if (!(await hasUpgradePlanModal(page, 500))) {
     return false;
@@ -171,6 +210,17 @@ async function dismissUpgradePlanModal(page: Page) {
     return true;
   }
 
+  const namedClose = page.getByRole("button", { name: /^close$|^x$|^×$/i }).last();
+
+  if (await namedClose.isVisible({ timeout: 500 }).catch(() => false)) {
+    await namedClose.click({ timeout: 1_000 }).catch(() => undefined);
+    await page.waitForTimeout(750);
+  }
+
+  if (!(await hasUpgradePlanModal(page, 500))) {
+    return true;
+  }
+
   const box = await dialog.boundingBox().catch(() => null);
 
   if (box) {
@@ -178,12 +228,79 @@ async function dismissUpgradePlanModal(page: Page) {
     await page.waitForTimeout(750);
   }
 
+  if (!(await hasUpgradePlanModal(page, 500))) {
+    return true;
+  }
+
+  await clickTopRightCloseControl(page);
+
+  if (!(await hasUpgradePlanModal(page, 500))) {
+    return true;
+  }
+
+  const viewport = page.viewportSize();
+
+  if (viewport) {
+    await page.mouse.click(viewport.width - 80, 68).catch(() => undefined);
+    await page.waitForTimeout(750);
+  }
+
   return !(await hasUpgradePlanModal(page, 500));
+}
+
+async function dismissAllDialogs(page: Page) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const dialogCount = await page.getByRole("dialog").count().catch(() => 0);
+    if (dialogCount === 0) return true;
+
+    await page.keyboard.press("Escape").catch(() => undefined);
+    await page.waitForTimeout(750);
+
+    const remaining = await page.getByRole("dialog").count().catch(() => 0);
+    if (remaining === 0) return true;
+
+    const dialogs = page.getByRole("dialog");
+
+    const dialogCloseLocators = [
+      dialogs.locator('button[aria-label*="close" i]').first(),
+      dialogs.locator('[role="button"][aria-label*="close" i]').first(),
+      dialogs.locator('button:has-text("×"), button:has-text("x")').first(),
+    ];
+
+    for (const closeBtn of dialogCloseLocators) {
+      if (await closeBtn.isVisible({ timeout: 500 }).catch(() => false)) {
+        await closeBtn.click({ timeout: 1_000 }).catch(() => undefined);
+        await page.waitForTimeout(750);
+        break;
+      }
+    }
+
+    const remainingAfterClose = await page.getByRole("dialog").count().catch(() => 0);
+    if (remainingAfterClose === 0) return true;
+
+    const dialogDismissButtons = [
+      page.getByRole("button", { name: /cancel|close|got it|ok|done|maybe later|not now|skip|no thanks/i }).first(),
+      page.getByRole("button", { name: /continue|next|proceed/i }).first(),
+    ];
+
+    for (const btn of dialogDismissButtons) {
+      if (await btn.isVisible({ timeout: 500 }).catch(() => false)) {
+        await btn.click({ timeout: 1_000 }).catch(() => undefined);
+        await page.waitForTimeout(750);
+        break;
+      }
+    }
+
+    const remainingAfterDismiss = await page.getByRole("dialog").count().catch(() => 0);
+    if (remainingAfterDismiss === 0) return true;
+  }
+
+  return (await page.getByRole("dialog").count().catch(() => 0)) === 0;
 }
 
 async function dismissSoftPopups(page: Page) {
   await dismissUpgradePlanModal(page);
-  await page.keyboard.press("Escape").catch(() => undefined);
+  await dismissAllDialogs(page);
 
   for (const locator of popupDismissLocators(page)) {
     if (!(await locator.isVisible({ timeout: 500 }).catch(() => false))) {
@@ -754,43 +871,90 @@ async function downloadFromHref(page: Page, href: string, clip: OpusClipGenerate
 
 async function clickForDownload(page: Page, locator: Locator, clip: OpusClipGeneratedClip) {
   const config = getOpusClipConfig();
+  const clickFailedResult = "click-failed" as const;
   const upgradePlanResult = "upgrade-plan" as const;
-  const downloadPromise = page
-    .waitForEvent("download", {
-      timeout: config.downloadTimeoutMs,
-    })
-    .catch(() => null);
-  const upgradePlanPromise = hasUpgradePlanModal(page, config.selectorTimeoutMs).then((visible) =>
-    visible ? upgradePlanResult : null,
-  );
+  type ClickResult = DownloadedOpusClip | null | typeof upgradePlanResult | typeof clickFailedResult;
 
-  try {
-    await locator.click({
-      timeout: config.selectorTimeoutMs,
+  const clickAndDownload = async (): Promise<ClickResult> => {
+    const downloadPromise = page
+      .waitForEvent("download", {
+        timeout: config.downloadTimeoutMs,
+      })
+      .catch(() => null);
+    const upgradePlanPromise = hasUpgradePlanModal(page, config.selectorTimeoutMs).then((visible) =>
+      visible ? upgradePlanResult : null,
+    );
+
+    try {
+      await locator.click({
+        timeout: config.selectorTimeoutMs,
+      });
+    } catch {
+      return clickFailedResult;
+    }
+
+    const firstResult = await Promise.race([downloadPromise, upgradePlanPromise]);
+
+    if (firstResult === upgradePlanResult) {
+      return upgradePlanResult;
+    }
+
+    const download = firstResult ?? (await downloadPromise);
+
+    if (!download) {
+      return null;
+    }
+
+    await mkdir(config.downloadsDir, {
+      recursive: true,
     });
-  } catch (error) {
-    if (await dismissUpgradePlanModal(page)) {
-      return null;
-    }
 
-    await dismissSoftPopups(page);
-    if (!(await hasUpgradePlanModal(page, 500))) {
-      return null;
-    }
+    const filePath = join(config.downloadsDir, `${randomUUID()}-${download.suggestedFilename()}`);
+    await download.saveAs(filePath);
 
-    throw error;
-  }
+    return {
+      clip,
+      filePath,
+      fileName: download.suggestedFilename(),
+    } satisfies DownloadedOpusClip;
+  };
 
-  const firstResult = await Promise.race([downloadPromise, upgradePlanPromise]);
+  let result = await clickAndDownload();
 
-  if (firstResult === upgradePlanResult) {
+  if (result === upgradePlanResult) {
     await dismissUpgradePlanModal(page);
     return null;
   }
 
-  const download = firstResult ?? (await downloadPromise);
+  if (result === clickFailedResult) {
+    await dismissSoftPopups(page);
 
-  if (!download) {
+    result = await clickAndDownload();
+
+    if (result === upgradePlanResult) {
+      await dismissUpgradePlanModal(page);
+      return null;
+    }
+
+    if (result === clickFailedResult) {
+      await page.keyboard.press("Escape").catch(() => undefined);
+      await page.waitForTimeout(1_000);
+      await dismissAllDialogs(page);
+
+      result = await clickAndDownload();
+
+      if (result === upgradePlanResult) {
+        await dismissUpgradePlanModal(page);
+        return null;
+      }
+
+      if (result === clickFailedResult) {
+        return null;
+      }
+    }
+  }
+
+  if (result === null) {
     if (!(await dismissUpgradePlanModal(page))) {
       await dismissSoftPopups(page);
     }
@@ -798,18 +962,7 @@ async function clickForDownload(page: Page, locator: Locator, clip: OpusClipGene
     return null;
   }
 
-  await mkdir(config.downloadsDir, {
-    recursive: true,
-  });
-
-  const filePath = join(config.downloadsDir, `${randomUUID()}-${download.suggestedFilename()}`);
-  await download.saveAs(filePath);
-
-  return {
-    clip,
-    filePath,
-    fileName: download.suggestedFilename(),
-  } satisfies DownloadedOpusClip;
+  return result;
 }
 
 export async function openOpusClip(): Promise<OpusClipAutomationSession> {
@@ -1010,18 +1163,46 @@ export async function listGeneratedClips(page: Page): Promise<OpusClipGeneratedC
   }));
 }
 
+async function tryDownloadFromDialog(page: Page, clip: OpusClipGeneratedClip): Promise<DownloadedOpusClip | null> {
+  const dialogCount = await page.getByRole("dialog").count().catch(() => 0);
+  if (dialogCount === 0) return null;
+
+  const dialog = page.getByRole("dialog").first();
+  const dialogDownloadLocators = [
+    dialog.getByRole("button", { name: /download hd|download|export|save/i }).first(),
+    dialog.locator('button:has(img[alt*="download" i]), button:has(img[src*="download-icon"])').first(),
+    ...downloadButtonLocators(dialog),
+  ];
+
+  for (const locator of dialogDownloadLocators) {
+    if (!(await locator.isVisible({ timeout: 1_000 }).catch(() => false))) continue;
+
+    const href = await getDownloadHref(dialog, page);
+    if (href) {
+      return downloadFromHref(page, href, clip);
+    }
+
+    const downloaded = await clickForDownload(page, locator, clip);
+    if (downloaded) return downloaded;
+  }
+
+  return null;
+}
+
 export async function downloadClip(page: Page, clip: OpusClipGeneratedClip): Promise<DownloadedOpusClip> {
   if (!isEnabled("OPUSCLIP_ENABLE_REAL_DOWNLOAD")) {
     throw new Error("downloadClip is disabled. Set OPUSCLIP_ENABLE_REAL_DOWNLOAD=true after testing OpusClip selectors.");
   }
 
   await dismissSoftPopups(page);
+  await dismissAllDialogs(page);
 
   if (typeof clip.index === "number") {
     const downloadHdButtons = page.getByRole("button", { name: /Download HD/i });
     const downloadHdCount = await downloadHdButtons.count().catch(() => 0);
 
     if (downloadHdCount > clip.index) {
+      await dismissAllDialogs(page);
       const downloaded = await clickForDownload(page, downloadHdButtons.nth(clip.index), clip);
 
       if (downloaded) {
@@ -1033,12 +1214,14 @@ export async function downloadClip(page: Page, clip: OpusClipGeneratedClip): Pro
     const iconButtonCount = await iconButtons.count().catch(() => 0);
 
     if (iconButtonCount > clip.index) {
+      await dismissAllDialogs(page);
       const downloaded = await clickForDownload(page, iconButtons.nth(clip.index), clip);
 
       if (downloaded) {
         return downloaded;
       }
 
+      await dismissAllDialogs(page);
       const modalDownloaded = await clickForDownload(
         page,
         page.getByRole("button", { name: /download hd|download|export|save/i }).first(),
@@ -1051,6 +1234,11 @@ export async function downloadClip(page: Page, clip: OpusClipGeneratedClip): Pro
     }
   }
 
+  const dialogDownloaded = await tryDownloadFromDialog(page, clip);
+  if (dialogDownloaded) {
+    return dialogDownloaded;
+  }
+
   const cardLocator = await getBestClipCardLocator(page);
   const scope = cardLocator && typeof clip.index === "number" ? cardLocator.nth(clip.index) : page;
   const href = await getDownloadHref(scope, page);
@@ -1061,12 +1249,14 @@ export async function downloadClip(page: Page, clip: OpusClipGeneratedClip): Pro
 
   for (const locator of downloadButtonLocators(scope)) {
     try {
+      await dismissAllDialogs(page);
       const downloaded = await clickForDownload(page, locator, clip);
 
       if (downloaded) {
         return downloaded;
       }
 
+      await dismissAllDialogs(page);
       const modalDownloaded = await clickForDownload(
         page,
         page.getByRole("button", { name: /download|export|save/i }).first(),
@@ -1112,6 +1302,7 @@ export async function runOpusClipAutomation(input: OpusClipAutomationInput): Pro
         const message = error instanceof Error ? error.message : String(error);
         downloadErrors.push(`Clip ${clip.index ?? clip.opusclipClipId}: ${message}`);
         await dismissSoftPopups(session.page).catch(() => undefined);
+        await dismissAllDialogs(session.page).catch(() => undefined);
       }
     }
 
