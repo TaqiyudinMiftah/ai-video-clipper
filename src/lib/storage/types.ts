@@ -16,6 +16,7 @@ export type UploadFileResult = {
 export type DownloadFileResult = {
   path: string;
   data: Blob;
+  contentType?: string;
 };
 
 export type SignedUrlResult = {
