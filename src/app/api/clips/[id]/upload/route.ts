@@ -39,6 +39,10 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: "Clip must have a storage path before it can be uploaded to TikTok." }, { status: 400 });
   }
 
+  if (!clip.reapClipId) {
+    return NextResponse.json({ error: "Clip must have a Reap clip ID before it can be published to TikTok." }, { status: 400 });
+  }
+
   const activeUpload = await prisma.uploadTarget.findFirst({
     where: {
       clipId: clip.id,

@@ -6,9 +6,9 @@ import { createQueueRedisConnection } from "@/lib/queue/redis";
 
 export const VIDEO_PROCESSING_QUEUE_NAME = "video-processing";
 export const VIDEO_PROCESSING_JOB_NAME = "process-video";
-export const OPUSCLIP_MAX_ATTEMPTS = 3;
-export const OPUSCLIP_RETRY_DELAY_MS = 5 * 60 * 1000;
-export const DEFAULT_OPUSCLIP_WORKER_CONCURRENCY = 1;
+export const REAP_MAX_ATTEMPTS = 3;
+export const REAP_RETRY_DELAY_MS = 5 * 60 * 1000;
+export const DEFAULT_REAP_WORKER_CONCURRENCY = 1;
 
 export type VideoProcessingJobData = {
   dbJobId: string;
@@ -26,10 +26,10 @@ type VideoJobInput = {
 };
 
 const videoProcessingJobOptions = {
-  attempts: OPUSCLIP_MAX_ATTEMPTS,
+  attempts: REAP_MAX_ATTEMPTS,
   backoff: {
     type: "fixed",
-    delay: OPUSCLIP_RETRY_DELAY_MS,
+    delay: REAP_RETRY_DELAY_MS,
   },
   removeOnComplete: {
     count: 1000,
@@ -62,7 +62,7 @@ export async function enqueueVideoProcessingJob({
       videoId,
       jobType: "reap_process",
       status: "queued",
-      maxAttempts: OPUSCLIP_MAX_ATTEMPTS,
+      maxAttempts: REAP_MAX_ATTEMPTS,
     },
   });
 
@@ -106,8 +106,8 @@ export async function enqueueVideoProcessingJob({
         phase: 2,
         queueName: VIDEO_PROCESSING_QUEUE_NAME,
         queueJobId: queueJob.id,
-        attempts: OPUSCLIP_MAX_ATTEMPTS,
-        retryDelayMs: OPUSCLIP_RETRY_DELAY_MS,
+        attempts: REAP_MAX_ATTEMPTS,
+        retryDelayMs: REAP_RETRY_DELAY_MS,
       },
     });
 

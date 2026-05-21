@@ -43,6 +43,7 @@ export async function GET() {
       sourceUrl: video.sourceUrl,
       sourceStoragePath: video.sourceStoragePath,
       status: video.status,
+      reapProjectId: video.reapProjectId,
       clipCount: video.clips.length,
       errorMessage: video.errorMessage,
       createdAt: video.createdAt,
