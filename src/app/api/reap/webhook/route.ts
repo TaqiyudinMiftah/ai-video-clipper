@@ -8,6 +8,18 @@ import type { ReapWebhookPayload, ReapProjectStatus } from "@/lib/reap/types";
 const REAP_COMPLETED_STATUSES: ReapProjectStatus[] = ["completed"];
 const REAP_FAILED_STATUSES: ReapProjectStatus[] = ["invalid", "expired", "failed", "error"];
 
+/**
+ * Reap Webhook Handler
+ *
+ * Reap sends webhooks when projects reach terminal states (completed, invalid, expired).
+ * Requirements:
+ * - HTTPS endpoint
+ * - Respond 200 with empty body within 5s (validation) / 10s (live)
+ * - 5 consecutive failures → auto-disable by Reap
+ * - No retries from Reap (design for idempotency, use polling as fallback)
+ *
+ * Configure at: https://app.reap.video → Profile → Settings → Webhooks
+ */
 export async function POST(request: Request) {
   let payload: ReapWebhookPayload;
   try {
@@ -16,7 +28,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { projectId, projectType, source, status } = payload;
+  const { projectId, status } = payload;
 
   if (!projectId || !status) {
     return NextResponse.json({ error: "Missing projectId or status" }, { status: 400 });
@@ -27,16 +39,22 @@ export async function POST(request: Request) {
   });
 
   if (!video) {
-    return NextResponse.json({ error: "Video not found for projectId" }, { status: 200 });
+    // Return 200 so Reap doesn't count as failure
+    return new NextResponse(null, { status: 200 });
   }
+
+  // Acknowledge immediately to satisfy Reap's timeout requirement.
+  // Process download asynchronously.
+  const response = new NextResponse(null, { status: 200 });
 
   if (REAP_COMPLETED_STATUSES.includes(status)) {
-    await handleCompletedProject(video.id, video.userId, projectId);
+    // Fire-and-forget: do not await so we return 200 quickly
+    void handleCompletedProject(video.id, video.userId, projectId);
   } else if (REAP_FAILED_STATUSES.includes(status)) {
-    await handleFailedProject(video.id, video.userId, projectId, status);
+    void handleFailedProject(video.id, video.userId, projectId, status);
   }
 
-  return new NextResponse(null, { status: 200 });
+  return response;
 }
 
 async function handleCompletedProject(videoId: string, userId: string, reapProjectId: string) {
@@ -99,7 +117,7 @@ async function handleCompletedProject(videoId: string, userId: string, reapProje
       }
 
       const clipBytes = Buffer.from(await clipResponse.arrayBuffer());
-      const clipId = randomUUID();
+      const clipId = crypto.randomUUID();
       const storagePath = `users/${userId}/videos/${videoId}/clips/${clipId}.mp4`;
 
       await storage.uploadFile({
@@ -205,8 +223,4 @@ async function handleFailedProject(videoId: string, userId: string, reapProjectI
     message: errorMessage,
     metadata: { videoId, reapProjectId, status },
   });
-}
-
-function randomUUID() {
-  return crypto.randomUUID();
 }
