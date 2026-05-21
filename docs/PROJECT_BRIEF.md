@@ -2,9 +2,9 @@
 
 ## 0. Konteks Singkat
 
-Produk ini adalah sistem automasi untuk membantu user memproses daftar video menjadi clip pendek menggunakan OpusClip, menyimpan hasilnya ke storage, lalu mengunggah clip tersebut secara otomatis ke platform tujuan seperti YouTube Shorts, TikTok, atau Instagram Reels.
+Produk ini adalah sistem automasi untuk membantu user memproses daftar video menjadi clip pendek menggunakan Reap API, menyimpan hasilnya ke storage, lalu mengunggah clip tersebut secara otomatis ke TikTok melalui integrasi Reap Publish.
 
-Untuk kondisi MVP saat ini, integrasi OpusClip menggunakan **Playwright Worker** karena API OpusClip tidak tersedia secara terbuka untuk small-volume user. Untuk proses upload ke platform sosial, sistem menggunakan **Composio** agar integrasi OAuth dan API platform tujuan lebih aman dan mudah dikelola.
+Untuk MVP, sistem menggunakan **Reap REST API** untuk pembuatan clip dan **Reap Publish API** untuk upload ke TikTok. Tidak lagi menggunakan Playwright browser automation atau Composio.
 
 ---
 
@@ -18,17 +18,17 @@ Untuk kondisi MVP saat ini, integrasi OpusClip menggunakan **Playwright Worker**
 
 ### 1.2 Deskripsi Produk
 
-AI Automation Video Clipper adalah aplikasi web yang memungkinkan user memasukkan daftar video, memproses video tersebut menjadi short clips melalui OpusClip, menyimpan hasil clip ke storage, lalu mengunggah hasil clip secara otomatis ke platform tujuan.
+AI Automation Video Clipper adalah aplikasi web yang memungkinkan user memasukkan daftar video, memproses video tersebut menjadi short clips melalui Reap API, menyimpan hasil clip ke storage, lalu mengunggah hasil clip secara otomatis ke TikTok.
 
 Produk ini bertujuan mengurangi pekerjaan manual dalam proses:
 
 1. Mengumpulkan video.
-2. Mengunggah video ke OpusClip.
+2. Mengunggah video ke Reap untuk diproses.
 3. Menunggu hasil clipping.
 4. Mengunduh hasil clip.
 5. Menyimpan hasil clip.
 6. Membuat caption/title/hashtag.
-7. Mengunggah clip ke platform sosial.
+7. Mengunggah clip ke TikTok.
 
 ### 1.3 Masalah yang Diselesaikan
 
@@ -36,10 +36,10 @@ Content creator atau operator social media sering perlu mengubah video panjang m
 
 Masalah utama:
 
-* Upload video ke OpusClip masih manual.
+* Upload video ke platform clipping masih manual.
 * Hasil clip perlu dicek dan diunduh satu per satu.
 * File hasil clip perlu disimpan ulang ke storage.
-* Upload ke YouTube/TikTok/Reels dilakukan manual.
+* Upload ke TikTok dilakukan manual.
 * Tidak ada dashboard status untuk melihat progress setiap video.
 * Sulit melakukan retry jika salah satu proses gagal.
 
@@ -51,10 +51,10 @@ Tujuan utama MVP:
 
 * User dapat memasukkan daftar video dari Web UI.
 * Sistem dapat membuat task clipping untuk setiap video.
-* Sistem dapat mengirim video ke OpusClip menggunakan Playwright Worker.
-* Sistem dapat mengambil atau mengunduh hasil clip dari OpusClip.
+* Sistem dapat mengirim video ke Reap API untuk diproses.
+* Sistem dapat menerima webhook atau polling untuk mengambil hasil clip.
 * Sistem dapat menyimpan hasil clip ke storage.
-* Sistem dapat mengunggah hasil clip ke platform tujuan menggunakan Composio.
+* Sistem dapat mengunggah hasil clip ke TikTok melalui Reap Publish.
 * User dapat melihat status setiap video dan clip.
 * Sistem memiliki retry dan logging ketika proses gagal.
 
@@ -63,10 +63,9 @@ Tujuan utama MVP:
 Hal yang tidak menjadi fokus MVP:
 
 * Tidak membuat model AI clipping sendiri.
-* Tidak membuat pengganti OpusClip.
+* Tidak membuat pengganti Reap.
 * Tidak mendukung semua platform sosial sekaligus.
 * Tidak mendukung multi-tenant enterprise dari awal.
-* Tidak melakukan full autonomous AI agent untuk klik UI.
 * Tidak melakukan bypass CAPTCHA, rate limit, atau sistem keamanan pihak ketiga.
 * Tidak menjalankan automation dalam skala besar tanpa izin dari pihak layanan terkait.
 
@@ -79,28 +78,6 @@ Content creator, social media manager, atau operator konten yang sering membuat 
 #### Secondary User
 
 Founder, developer, atau agency kecil yang ingin menguji workflow automasi short-form content sebelum membangun sistem production yang lebih besar.
-
-### 1.7 Persona
-
-#### Persona 1 — Solo Creator
-
-* Memiliki beberapa video panjang.
-* Ingin mengubah video menjadi clip pendek.
-* Ingin menghemat waktu upload dan download manual.
-* Tidak membutuhkan fitur enterprise.
-
-#### Persona 2 — Social Media Operator
-
-* Mengelola banyak video untuk brand atau channel.
-* Perlu melihat status setiap video.
-* Perlu upload clip ke platform tujuan.
-* Membutuhkan sistem yang bisa retry ketika gagal.
-
-#### Persona 3 — Developer / Founder
-
-* Ingin membuat MVP SaaS automation.
-* Perlu workflow yang modular.
-* Ingin memulai dengan Playwright tetapi tetap siap migrasi ke API resmi jika tersedia.
 
 ---
 
@@ -129,17 +106,17 @@ Acceptance criteria:
 * User dapat melihat error jika task gagal.
 * User dapat melakukan retry task gagal.
 
-### 2.3 OpusClip Automation
+### 2.3 Reap Processing
 
-Sebagai user, saya ingin sistem mengirim video ke OpusClip agar saya tidak perlu upload manual.
+Sebagai user, saya ingin sistem mengirim video ke Reap agar saya tidak perlu upload manual ke platform clipping.
 
 Acceptance criteria:
 
 * Worker dapat mengambil task dari queue.
-* Worker dapat membuka OpusClip menggunakan session yang tersimpan.
-* Worker dapat mengunggah video atau memasukkan URL video.
-* Worker dapat menunggu proses clipping selesai.
-* Worker dapat mengambil daftar clip hasil processing.
+* Worker dapat mengunggah source video ke Reap (via URL atau file upload).
+* Worker dapat membuat project clipping di Reap.
+* Sistem dapat menerima webhook callback saat project selesai.
+* Atau sistem dapat melakukan polling jika webhook tidak tersedia.
 
 ### 2.4 Clip Storage
 
@@ -152,14 +129,14 @@ Acceptance criteria:
 * Metadata clip disimpan di database.
 * User dapat melihat atau mengunduh clip dari dashboard.
 
-### 2.5 Auto Upload
+### 2.5 Auto Upload ke TikTok
 
-Sebagai user, saya ingin clip otomatis diunggah ke platform tujuan agar proses publikasi lebih cepat.
+Sebagai user, saya ingin clip otomatis diunggah ke TikTok agar proses publikasi lebih cepat.
 
 Acceptance criteria:
 
-* User dapat memilih platform tujuan.
-* Sistem menggunakan Composio untuk upload.
+* User dapat memilih platform tujuan (MVP: TikTok).
+* Sistem menggunakan Reap Publish API untuk upload ke TikTok.
 * Sistem menyimpan status upload.
 * Sistem menyimpan URL hasil upload jika tersedia.
 * Sistem dapat melakukan retry upload jika gagal.
@@ -179,7 +156,7 @@ Acceptance criteria:
 
 ## 3. Product Scope
 
-## 3.1 MVP Scope
+### 3.1 MVP Scope
 
 Fitur MVP:
 
@@ -188,28 +165,27 @@ Fitur MVP:
 3. Input video URL.
 4. Upload file video ke storage.
 5. Queue task processing.
-6. Playwright Worker untuk OpusClip.
-7. Download hasil clip.
+6. Reap API Worker untuk pembuatan clip.
+7. Webhook atau polling untuk download hasil clip.
 8. Simpan hasil clip ke storage.
 9. Generate title/caption sederhana.
-10. Upload clip menggunakan Composio.
+10. Upload clip ke TikTok menggunakan Reap Publish.
 11. Retry failed task.
 12. Basic logging.
 
-## 3.2 Future Scope
+### 3.2 Future Scope
 
 Fitur lanjutan:
 
-1. Integrasi OpusClip API resmi jika akses tersedia.
-2. Multi-user workspace.
-3. Scheduling upload.
-4. Approval flow sebelum upload.
-5. AI clip ranking.
-6. Template caption per platform.
-7. Bulk upload dengan concurrency control.
-8. Analytics upload.
-9. Payment dan subscription.
-10. Webhook untuk status update.
+1. Multi-user workspace.
+2. Scheduling upload.
+3. Approval flow sebelum upload.
+4. AI clip ranking.
+5. Template caption per platform.
+6. Bulk upload dengan concurrency control.
+7. Analytics upload.
+8. Payment dan subscription.
+9. Support platform tambahan (YouTube Shorts, Instagram Reels).
 
 ---
 
@@ -228,9 +204,9 @@ Fitur lanjutan:
 
 MVP dianggap berhasil jika:
 
-* Minimal 80% video berhasil dikirim ke OpusClip melalui Playwright Worker.
+* Minimal 80% video berhasil diproses oleh Reap API.
 * Minimal 80% hasil clip berhasil disimpan ke storage.
-* Minimal 70% clip berhasil diupload ke platform tujuan menggunakan Composio.
+* Minimal 70% clip berhasil diupload ke TikTok melalui Reap Publish.
 * User dapat melihat status task dengan jelas.
 * Sistem dapat melakukan retry untuk task gagal.
 
@@ -240,36 +216,33 @@ MVP dianggap berhasil jika:
 
 ### 5.1 Risiko ToS dan Compliance
 
-Karena MVP menggunakan Playwright untuk mengotomasi OpusClip, terdapat risiko terkait Terms of Service. Sistem tidak boleh digunakan untuk bypass CAPTCHA, rate limit, security mechanism, atau melakukan scraping yang tidak perlu.
+Sistem menggunakan Reap API dan Reap Publish. Harus mematuhi Terms of Service Reap dan TikTok.
 
 Mitigasi:
 
-* Gunakan hanya untuk MVP/internal testing.
-* Batasi concurrency.
+* Gunakan API resmi, bukan scraping.
+* Batasi concurrency (Reap rate limit: 10 req/min).
 * Gunakan akun resmi milik sendiri.
 * Jangan melakukan automation massal tanpa izin.
-* Siapkan migrasi ke API resmi jika tersedia.
-* Simpan sistem secara modular agar Playwright dapat diganti oleh API.
 
-### 5.2 Risiko UI OpusClip Berubah
+### 5.2 Risiko API Berubah
 
-Playwright bergantung pada struktur UI. Jika UI OpusClip berubah, automation bisa gagal.
+Reap API mungkin berubah di masa depan.
 
 Mitigasi:
 
-* Gunakan selector yang stabil.
-* Buat screenshot/log ketika gagal.
-* Buat manual fallback.
-* Buat health check worker.
+* Simpan OpenAPI spec lokal untuk referensi.
+* Buat service boundary yang modular (Reap API client di `src/lib/reap/`).
+* Gunakan type-safe API client dengan TypeScript.
 
 ### 5.3 Risiko Platform Upload
 
-Platform seperti YouTube atau TikTok memiliki policy, rate limit, review, dan restriction masing-masing.
+TikTok memiliki policy, rate limit, review, dan restriction masing-masing.
 
 Mitigasi:
 
-* Gunakan Composio/API resmi.
-* Simpan status OAuth.
+* Gunakan Reap Publish API (sudah menangani OAuth dan platform API).
+* Simpan status upload di database.
 * Validasi ukuran, durasi, dan format video.
 * Tambahkan error handling untuk upload failure.
 
@@ -279,103 +252,97 @@ Mitigasi:
 
 ## 6. System Architecture
 
-## 6.1 High-Level Architecture
+### 6.1 High-Level Architecture
 
 ```text
 Client
   ↓
-Web UI
+Web UI (Next.js App Router)
   ↓
-Backend API
+Backend API (Next.js Route Handlers)
   ↓
-Database + Queue
+Database (PostgreSQL) + Queue (Redis/BullMQ)
   ↓
-Playwright Worker for OpusClip
+Reap Processing Worker → Reap API
   ↓
-Clip Result Storage
+Webhook Handler / Polling Worker → Download clips
   ↓
-Composio Uploader
+Clip Result Storage (Supabase/Cloudflare R2)
   ↓
-YouTube / TikTok / Reels
+Reap Publish Worker → Reap API → TikTok
 ```
 
-## 6.2 Recommended Tech Stack
+### 6.2 Recommended Tech Stack
 
-### Frontend
+#### Frontend
 
 * Next.js / React
 * Tailwind CSS
-* Shadcn UI
 
-### Backend
+#### Backend
 
-* Node.js + NestJS / Express
-* Alternative: FastAPI
+* Next.js Route Handlers
 
-### Database
+#### Database
 
 * PostgreSQL
-* Supabase PostgreSQL bisa digunakan untuk MVP
+* Prisma ORM
 
-### Queue
+#### Queue
 
 * BullMQ + Redis
-* Alternative: Celery + Redis jika backend Python
 
-### Browser Automation
+#### Clip Generation
 
-* Playwright
+* Reap API (REST)
 
-### Storage
+#### Storage
 
-* Cloudflare R2
-* AWS S3
-* Supabase Storage
+* Supabase Storage atau Cloudflare R2
 
-### Upload Integration
+#### Upload Integration
 
-* Composio
+* Reap Publish API (TikTok)
 
-### AI Captioning
+#### AI Captioning
 
-* OpenAI API / local LLM / model lain sesuai kebutuhan
+* OpenAI API / local LLM
 
 ---
 
 ## 7. Main Functional Modules
 
-## 7.1 Authentication Module
+### 7.1 Authentication Module
 
-### Purpose
+#### Purpose
 
 Mengatur user login dan akses dashboard.
 
-### Functional Requirements
+#### Functional Requirements
 
 * User dapat login.
 * User dapat logout.
 * Sistem menyimpan session user.
 * Setiap task dikaitkan dengan user.
 
-### MVP Option
+#### MVP Option
 
-Gunakan Supabase Auth atau NextAuth.
+Gunakan NextAuth placeholder untuk MVP.
 
 ---
 
-## 7.2 Video Submission Module
+### 7.2 Video Submission Module
 
-### Purpose
+#### Purpose
 
 Menerima input video dari user.
 
-### Input Type
+#### Input Type
 
 1. Video URL.
 2. File upload.
-3. Bulk list URL.
 
-### Functional Flow
+#### Functional Flow
 
 ```text
 User submit video
@@ -391,40 +358,39 @@ Buat job di queue
 Status video = pending
 ```
 
-### Validation
+#### Validation
 
 * URL harus valid.
 * File harus video.
 * Format video yang didukung: MP4, MOV, WEBM.
-* Ukuran file mengikuti batas storage dan OpusClip.
-* Durasi video dicatat jika memungkinkan.
+* Ukuran file mengikuti batas storage dan Reap (max 500MB).
 
 ---
 
-## 7.3 Task Management Module
+### 7.3 Task Management Module
 
-### Purpose
+#### Purpose
 
 Mengelola lifecycle video processing.
 
-### Status Lifecycle
+#### Status Lifecycle
 
 ```text
 pending
 queued
-uploading_to_opusclip
-processing_in_opusclip
-downloading_clips
+uploading_to_reap
+processing_in_reap
+downloading_from_reap
 storing_clips
 generating_caption
 ready_to_upload
-uploading_to_platform
+uploading_to_tiktok
 completed
 failed
 cancelled
 ```
 
-### Functional Requirements
+#### Functional Requirements
 
 * Sistem membuat task untuk setiap video.
 * Sistem memperbarui status task secara berkala.
@@ -434,23 +400,25 @@ cancelled
 
 ---
 
-## 7.4 Queue Module
+### 7.4 Queue Module
 
-### Purpose
+#### Purpose
 
 Mengatur antrean job agar proses automation tidak berjalan bersamaan secara berlebihan.
 
-### Functional Requirements
+#### Functional Requirements
 
 * Setiap video menghasilkan satu processing job.
 * Queue mendukung retry otomatis.
 * Queue mendukung delay.
 * Queue mendukung concurrency limit.
 
-### Recommended MVP Configuration
+#### Recommended MVP Configuration
 
 ```text
-OpusClip Worker concurrency: 1
+Reap Worker concurrency: 1
+Reap Publish Worker concurrency: 1
+Reap Polling Worker concurrency: 1
 Retry max: 3
 Retry delay: 5 minutes
 Timeout per job: configurable
@@ -458,73 +426,78 @@ Timeout per job: configurable
 
 ---
 
-## 7.5 OpusClip Playwright Worker Module
+### 7.5 Reap Processing Worker Module
 
-### Purpose
+#### Purpose
 
-Mengotomasi proses upload video ke OpusClip dan mengambil hasil clip.
+Mengunggah video ke Reap dan membuat project clipping.
 
-### Worker Flow
+#### Worker Flow
 
 ```text
 1. Ambil job dari queue.
-2. Load saved browser session.
-3. Buka halaman OpusClip.
-4. Upload video atau submit URL video.
-5. Tunggu proses upload selesai.
-6. Tunggu proses clipping selesai.
-7. Ambil daftar hasil clip.
-8. Download setiap clip.
-9. Simpan clip ke temporary folder.
-10. Upload clip ke storage.
-11. Update database.
-12. Trigger upload job ke platform tujuan.
+2. Validasi Reap API key.
+3. Jika source URL: create clips project langsung.
+4. Jika source file: upload file ke Reap → create clips project.
+5. Simpan reapProjectId ke database.
+6. Update video status = processing_in_reap.
+7. Worker selesai — webhook atau polling akan menangani hasil.
 ```
 
-### Session Handling
+#### Webhook Flow (Recommended)
 
-* Playwright menyimpan `storageState`.
-* Login manual dapat dilakukan satu kali untuk menyimpan session.
-* Worker menggunakan session tersebut untuk task berikutnya.
+```text
+Reap kirim webhook project completed
+  ↓
+Webhook handler menerima payload
+  ↓
+Fetch daftar clip dari Reap API
+  ↓
+Download setiap clip
+  ↓
+Upload clip ke storage
+  ↓
+Buat Clip records di database
+  ↓
+Update video status = ready_to_upload
+```
 
-### Error Handling
+#### Polling Flow (Fallback)
+
+```text
+Reap Polling Worker ambil job dari queue
+  ↓
+Poll Reap project status setiap 30 detik
+  ↓
+Jika completed: download clips, store, update DB
+  ↓
+Jika failed: update status = failed
+```
+
+#### Error Handling
 
 Jika gagal:
 
-* Simpan screenshot.
-* Simpan log console jika tersedia.
 * Simpan error message.
 * Ubah status task menjadi `failed`.
 * Trigger retry jika retry count belum habis.
 
-### Important Restriction
-
-Worker tidak boleh:
-
-* Bypass CAPTCHA.
-* Bypass rate limit.
-* Mengakses data yang tidak diperlukan.
-* Melakukan scraping massal di luar kebutuhan workflow.
-* Menjalankan concurrent browser automation secara agresif.
-
 ---
 
-## 7.6 Clip Storage Module
+### 7.6 Clip Storage Module
 
-### Purpose
+#### Purpose
 
-Menyimpan hasil clip dari OpusClip.
+Menyimpan hasil clip dari Reap.
 
-### Storage Structure
+#### Storage Structure
 
 ```text
 /users/{user_id}/videos/{video_id}/source.mp4
 /users/{user_id}/videos/{video_id}/clips/{clip_id}.mp4
-/users/{user_id}/videos/{video_id}/logs/{job_id}.json
-/users/{user_id}/videos/{video_id}/screenshots/{job_id}.png
 ```
 
-### Functional Requirements
+#### Functional Requirements
 
 * Sistem dapat upload file ke storage.
 * Sistem menyimpan storage path di database.
@@ -533,13 +506,13 @@ Menyimpan hasil clip dari OpusClip.
 
 ---
 
-## 7.7 Caption & Metadata Module
+### 7.7 Caption & Metadata Module
 
-### Purpose
+#### Purpose
 
 Membuat metadata upload seperti title, caption, description, dan hashtag.
 
-### Functional Requirements
+#### Functional Requirements
 
 * Generate title otomatis.
 * Generate caption otomatis.
@@ -547,55 +520,42 @@ Membuat metadata upload seperti title, caption, description, dan hashtag.
 * User dapat mengedit metadata.
 * Metadata tersimpan per clip.
 
-### Example Metadata
-
-```json
-{
-  "title": "3 Insight Penting dari Video Ini",
-  "caption": "Potongan terbaik dari video panjang ini. Simak sampai akhir!",
-  "hashtags": ["#shorts", "#ai", "#productivity"]
-}
-```
-
 ---
 
-## 7.8 Composio Upload Module
+### 7.8 Reap Publish Module (TikTok Upload)
 
-### Purpose
+#### Purpose
 
-Mengunggah clip ke platform tujuan menggunakan Composio.
+Mengunggah clip ke TikTok menggunakan Reap Publish API.
 
-### Supported Platform for MVP
+#### Supported Platform for MVP
 
-Prioritas MVP:
+1. TikTok (via Reap Publish)
 
-1. TikTok
+YouTube Shorts dan Instagram Reels menjadi future scope.
 
-YouTube Shorts dan Instagram Reels menjadi future scope. Dengan fokus ke TikTok terlebih dahulu, MVP dapat lebih cepat dikembangkan karena integrasi upload, validasi format video, dan flow OAuth hanya perlu difokuskan pada satu platform utama.
-
-### Upload Flow
+#### Upload Flow
 
 ```text
 Clip ready_to_upload
   ↓
-User memilih platform tujuan
+User memilih platform tujuan (TikTok)
   ↓
 Backend membuat upload job
   ↓
-Composio menjalankan API upload
+Reap Publish Worker menjalankan publishClip API
   ↓
-Sistem menerima response
+Sistem menerima response dari Reap
   ↓
 Simpan upload URL/status
   ↓
 Status menjadi completed atau failed
 ```
 
-### Functional Requirements
+#### Functional Requirements
 
-* User dapat connect akun platform melalui OAuth.
-* Sistem dapat upload clip ke platform tujuan.
-* Sistem dapat mengirim title/caption.
+* Sistem dapat upload clip ke TikTok melalui Reap.
+* Sistem dapat mengirim title/caption/tags.
 * Sistem menyimpan upload status.
 * Sistem menyimpan platform video URL jika tersedia.
 
@@ -603,13 +563,13 @@ Status menjadi completed atau failed
 
 ## 8. Page / Screen Specification
 
-## 8.1 Dashboard Page
+### 8.1 Dashboard Page
 
-### Purpose
+#### Purpose
 
 Menampilkan ringkasan task video.
 
-### Components
+#### Components
 
 * Total videos.
 * Total clips generated.
@@ -617,7 +577,7 @@ Menampilkan ringkasan task video.
 * Failed tasks.
 * Recent tasks.
 
-### Actions
+#### Actions
 
 * Add video.
 * View task detail.
@@ -625,36 +585,33 @@ Menampilkan ringkasan task video.
 
 ---
 
-## 8.2 Add Video Page
+### 8.2 Add Video Page
 
-### Purpose
+#### Purpose
 
 User menambahkan video baru.
 
-### Components
+#### Components
 
 * Input video URL.
-* Bulk URL textarea.
 * File upload input.
-* Platform target selection.
 * Submit button.
 
-### Validation Message
+#### Validation Message
 
 * Invalid URL.
 * Unsupported file type.
 * File too large.
-* Missing platform target.
 
 ---
 
-## 8.3 Video Task List Page
+### 8.3 Video Task List Page
 
-### Purpose
+#### Purpose
 
 Menampilkan semua video task.
 
-### Columns
+#### Columns
 
 * Video title/source.
 * Status.
@@ -664,7 +621,7 @@ Menampilkan semua video task.
 * Error indicator.
 * Action.
 
-### Actions
+#### Actions
 
 * View detail.
 * Retry.
@@ -673,13 +630,13 @@ Menampilkan semua video task.
 
 ---
 
-## 8.4 Video Detail Page
+### 8.4 Video Detail Page
 
-### Purpose
+#### Purpose
 
 Menampilkan detail processing video dan hasil clip.
 
-### Sections
+#### Sections
 
 * Source video info.
 * Processing status.
@@ -687,7 +644,7 @@ Menampilkan detail processing video dan hasil clip.
 * Clip result list.
 * Upload status.
 
-### Actions
+#### Actions
 
 * Preview clip.
 * Edit caption.
@@ -697,32 +654,24 @@ Menampilkan detail processing video dan hasil clip.
 
 ---
 
-## 8.5 Integration Settings Page
+### 8.5 Integration Settings Page
 
-### Purpose
+#### Purpose
 
-Mengatur koneksi platform dan credential.
+Menampilkan status integrasi Reap dan TikTok.
 
-### Components
+#### Components
 
-* Composio connection status.
-* YouTube account status.
-* TikTok account status.
+* Reap API connection status.
+* TikTok integration status (via Reap).
 * Storage connection status.
-* OpusClip session status.
-
-### Actions
-
-* Connect platform.
-* Disconnect platform.
-* Test connection.
-* Refresh OpusClip session.
+* Redis / BullMQ status.
 
 ---
 
 ## 9. Data Model
 
-## 9.1 users
+### 9.1 users
 
 ```sql
 users (
@@ -734,7 +683,7 @@ users (
 )
 ```
 
-## 9.2 videos
+### 9.2 videos
 
 ```sql
 videos (
@@ -748,41 +697,47 @@ videos (
   status text,
   error_message text,
   retry_count integer default 0,
+  reap_project_id text,
   created_at timestamp,
   updated_at timestamp
 )
 ```
 
-## 9.3 clips
+### 9.3 clips
 
 ```sql
 clips (
   id uuid primary key,
   video_id uuid references videos(id),
   user_id uuid references users(id),
-  opusclip_clip_id text,
+  reap_clip_id text,
   storage_path text,
   preview_url text,
   duration_seconds integer,
   title text,
   caption text,
   hashtags text[],
+  virality_score float,
+  source_start_time float,
+  source_end_time float,
   status text,
   created_at timestamp,
   updated_at timestamp
 )
 ```
 
-## 9.4 upload_targets
+### 9.4 upload_targets
 
 ```sql
 upload_targets (
   id uuid primary key,
   clip_id uuid references clips(id),
   user_id uuid references users(id),
-  platform text, -- youtube | tiktok | instagram
+  platform text, -- tiktok
   upload_status text,
   uploaded_url text,
+  reap_integration_id text,
+  reap_post_id text,
   scheduled_at timestamp,
   error_message text,
   retry_count integer default 0,
@@ -791,7 +746,7 @@ upload_targets (
 )
 ```
 
-## 9.5 jobs
+### 9.5 jobs
 
 ```sql
 jobs (
@@ -799,7 +754,7 @@ jobs (
   user_id uuid references users(id),
   video_id uuid references videos(id),
   clip_id uuid references clips(id),
-  job_type text, -- opusclip_process | upload_platform | generate_caption
+  job_type text, -- reap_process | reap_publish | generate_caption
   status text,
   attempts integer default 0,
   max_attempts integer default 3,
@@ -811,7 +766,7 @@ jobs (
 )
 ```
 
-## 9.6 logs
+### 9.6 logs
 
 ```sql
 logs (
@@ -829,23 +784,22 @@ logs (
 
 ## 10. API Specification
 
-## 10.1 Create Video Task
+### 10.1 Create Video Task
 
 ```http
 POST /api/videos
 ```
 
-### Request
+#### Request
 
 ```json
 {
   "sourceType": "url",
-  "sourceUrl": "https://example.com/video.mp4",
-  "platformTargets": ["youtube"]
+  "sourceUrl": "https://example.com/video.mp4"
 }
 ```
 
-### Response
+#### Response
 
 ```json
 {
@@ -856,13 +810,13 @@ POST /api/videos
 
 ---
 
-## 10.2 List Video Tasks
+### 10.2 List Video Tasks
 
 ```http
 GET /api/videos
 ```
 
-### Response
+#### Response
 
 ```json
 {
@@ -870,7 +824,7 @@ GET /api/videos
     {
       "id": "uuid",
       "title": "Video title",
-      "status": "processing_in_opusclip",
+      "status": "processing_in_reap",
       "createdAt": "timestamp"
     }
   ]
@@ -879,21 +833,23 @@ GET /api/videos
 
 ---
 
-## 10.3 Get Video Detail
+### 10.3 Get Video Detail
 
 ```http
 GET /api/videos/{videoId}
 ```
 
-### Response
+#### Response
 
 ```json
 {
   "id": "uuid",
   "status": "completed",
+  "reapProjectId": "reap_project_id",
   "clips": [
     {
       "id": "uuid",
+      "reapClipId": "reap_clip_id",
       "storagePath": "path/to/clip.mp4",
       "caption": "caption text",
       "uploadStatus": "completed"
@@ -904,13 +860,13 @@ GET /api/videos/{videoId}
 
 ---
 
-## 10.4 Retry Video Task
+### 10.4 Retry Video Task
 
 ```http
 POST /api/videos/{videoId}/retry
 ```
 
-### Response
+#### Response
 
 ```json
 {
@@ -921,13 +877,32 @@ POST /api/videos/{videoId}/retry
 
 ---
 
-## 10.5 Update Clip Metadata
+### 10.5 Poll Reap Project (Manual)
+
+```http
+POST /api/videos/{videoId}/poll
+```
+
+#### Response
+
+```json
+{
+  "videoId": "uuid",
+  "reapProjectId": "reap_project_id",
+  "jobId": "uuid",
+  "status": "polling_started"
+}
+```
+
+---
+
+### 10.6 Update Clip Metadata
 
 ```http
 PATCH /api/clips/{clipId}
 ```
 
-### Request
+#### Request
 
 ```json
 {
@@ -939,21 +914,21 @@ PATCH /api/clips/{clipId}
 
 ---
 
-## 10.6 Upload Clip
+### 10.7 Upload Clip to TikTok
 
 ```http
 POST /api/clips/{clipId}/upload
 ```
 
-### Request
+#### Request
 
 ```json
 {
-  "platform": "youtube"
+  "platform": "tiktok"
 }
 ```
 
-### Response
+#### Response
 
 ```json
 {
@@ -964,61 +939,114 @@ POST /api/clips/{clipId}/upload
 
 ---
 
+### 10.8 Get Reap Integrations
+
+```http
+GET /api/reap/integrations
+```
+
+#### Response
+
+```json
+{
+  "data": [
+    {
+      "id": "integration_id",
+      "platform": "tiktok",
+      "isActive": true,
+      "username": "username",
+      "name": "Account Name"
+    }
+  ]
+}
+```
+
+---
+
 ## 11. Worker Specification
 
-## 11.1 OpusClip Worker
+### 11.1 Reap Processing Worker
 
-### Input
+#### Input
 
 * `videoId`
 * `sourceUrl` or `sourceStoragePath`
 * `userId`
 
-### Output
+#### Output
 
-* One or more `clips`
-* Clip files uploaded to storage
-* Updated video status
+* Reap project created
+* `reapProjectId` stored in database
+* Video status updated to `processing_in_reap`
 
-### Failure Cases
+#### Failure Cases
 
-* OpusClip login expired.
+* Reap API key invalid.
 * Upload failed.
-* Video processing timeout.
-* Clip download failed.
-* Storage upload failed.
-* UI selector changed.
+* API rate limit exceeded (10 req/min).
+* Storage download/upload failed.
 
-### Retry Policy
+#### Retry Policy
 
 * Max retry: 3
 * Retry delay: 5 minutes
-* If session expired: mark as `failed_session_expired`
 
 ---
 
-## 11.2 Upload Worker
+### 11.2 Reap Polling Worker
 
-### Input
+#### Input
+
+* `videoId`
+* `reapProjectId`
+* `userId`
+
+#### Output
+
+* Clips downloaded from Reap
+* Clip files uploaded to storage
+* `Clip` records created in database
+* Video status updated to `ready_to_upload`
+
+#### Failure Cases
+
+* Reap project failed.
+* Reap project returned 0 clips.
+* Clip download failed.
+* Storage upload failed.
+
+#### Polling Configuration
+
+* Poll interval: 30 seconds
+* Max attempts: 120 (~1 hour)
+* Max retry per job: 3
+
+---
+
+### 11.3 Reap Publish Worker (TikTok)
+
+#### Input
 
 * `clipId`
-* `platform`
-* `title`
-* `caption`
-* `hashtags`
+* `uploadTargetId`
+* `userId`
 
-### Output
+#### Output
 
-* Uploaded platform URL
-* Upload status
+* Reap post created
+* Upload status updated
+* TikTok URL stored if available
 
-### Failure Cases
+#### Failure Cases
 
-* OAuth expired.
-* Platform upload limit reached.
-* Video format invalid.
-* API error from platform.
-* Composio error.
+* No active TikTok integration.
+* Reap API error.
+* TikTok rejected the upload.
+
+#### Retry Policy
+
+* Max retry: 3
+* Retry delay: 5 minutes
 
 ---
 
@@ -1027,11 +1055,9 @@ POST /api/clips/{clipId}/upload
 * User hanya dapat melihat task miliknya sendiri.
 * Storage private by default.
 * Signed URL digunakan untuk preview/download.
-* OAuth token platform tidak disimpan sembarangan di frontend.
-* Credential OpusClip session disimpan aman di server/worker environment.
-* Jangan simpan password plain text.
-* Jangan expose API key di frontend.
+* Reap API key tidak disimpan di frontend.
 * Semua API endpoint membutuhkan authentication.
+* Jangan expose API key di frontend.
 
 ---
 
@@ -1041,23 +1067,13 @@ POST /api/clips/{clipId}/upload
 
 * Task created.
 * Worker started.
-* Upload to OpusClip started.
-* OpusClip processing started.
+* Reap project created.
+* Webhook received.
 * Clip download started.
 * Storage upload completed.
-* Upload to platform started.
-* Upload completed.
+* Reap publish started.
+* Publish completed.
 * Error details.
-
-### Debug Artifacts
-
-Untuk Playwright error:
-
-* Screenshot.
-* Trace file jika memungkinkan.
-* Console log.
-* Current URL.
-* Error stack.
 
 ---
 
@@ -1065,21 +1081,21 @@ Untuk Playwright error:
 
 * Video URL tidak bisa diakses.
 * Video terlalu panjang.
-* Video terlalu besar.
+* Video terlalu besar (>500MB).
 * Video tidak memiliki audio.
-* OpusClip tidak menghasilkan clip.
-* OpusClip session expired.
+* Reap tidak menghasilkan clip.
+* Reap project expired atau invalid.
 * Storage penuh.
 * Upload platform ditolak karena copyright/policy.
 * Caption kosong.
-* User disconnect akun platform saat upload berjalan.
+* User disconnect akun TikTok saat upload berjalan.
 * Worker crash saat proses berjalan.
 
 ---
 
 ## 15. MVP Development Phases
 
-## Phase 1 — Core Dashboard & Task
+### Phase 1 — Core Dashboard & Task
 
 Deliverables:
 
@@ -1089,7 +1105,7 @@ Deliverables:
 * Database schema.
 * Queue setup.
 
-## Phase 2 — Storage & Worker Foundation
+### Phase 2 — Storage & Worker Foundation
 
 Deliverables:
 
@@ -1098,44 +1114,46 @@ Deliverables:
 * Job status update.
 * Logging.
 
-## Phase 3 — OpusClip Playwright Automation
+### Phase 3 — Reap API Integration
 
 Deliverables:
 
-* Saved session login.
-* Submit video to OpusClip.
-* Detect processing complete.
-* Download result clips.
+* Reap API client.
+* Upload source to Reap.
+* Create clips project.
+* Store reapProjectId.
+
+### Phase 4 — Clip Download & Review
+
+Deliverables:
+
+* Webhook handler.
+* Polling worker fallback.
+* Download clips from Reap.
 * Save clips to storage.
-
-## Phase 4 — Clip Review & Metadata
-
-Deliverables:
-
-* Clip list.
-* Clip preview.
+* Clip list dan preview.
 * Edit title/caption/hashtag.
-* Generate caption with LLM.
+* Generate caption dengan LLM.
 
-## Phase 5 — Composio Upload
+### Phase 5 — Reap Publish (TikTok)
 
 Deliverables:
 
-* Connect TikTok account.
-* Upload clip to TikTok.
-* Send caption/description metadata to TikTok.
-* Save uploaded TikTok URL or platform response.
+* Connect TikTok account di Reap dashboard.
+* Upload clip ke TikTok via Reap Publish.
+* Send caption/description metadata.
+* Save uploaded TikTok URL atau platform response.
 * Retry TikTok upload.
 
-## Phase 6 — Hardening
+### Phase 6 — Hardening
 
 Deliverables:
 
 * Retry policy.
-* Error screenshot.
 * Worker health check.
 * Rate limiting.
 * Manual fallback.
+* README dan setup docs.
 
 ---
 
@@ -1144,15 +1162,15 @@ Deliverables:
 MVP diterima jika:
 
 1. User dapat login dan membuka dashboard.
-2. User dapat menambahkan video URL.
+2. User dapat menambahkan video URL atau upload file.
 3. Sistem membuat task video.
 4. Worker mengambil task dari queue.
-5. Worker dapat mengirim video ke OpusClip menggunakan Playwright.
-6. Worker dapat mengambil hasil clip.
+5. Worker dapat mengirim video ke Reap API.
+6. Webhook atau polling dapat mengambil hasil clip.
 7. Clip tersimpan di storage.
 8. User dapat melihat hasil clip di dashboard.
 9. User dapat mengedit caption/title.
-10. User dapat mengunggah clip ke TikTok melalui Composio.
+10. User dapat mengunggah clip ke TikTok melalui Reap Publish.
 11. User dapat melihat status upload.
 12. Task gagal dapat diretry.
 13. Error utama tersimpan di log.
@@ -1168,13 +1186,12 @@ Urutan paling aman untuk development:
 3. Buat backend API untuk membuat video task.
 4. Buat queue dan worker dummy.
 5. Buat storage upload/download.
-6. Buat Playwright script manual untuk OpusClip.
-7. Integrasikan Playwright ke worker.
-8. Simpan hasil clip ke storage.
-9. Buat page clip review.
-10. Integrasikan Composio untuk upload.
-11. Tambahkan retry dan logging.
-12. Tambahkan caption generation.
+6. Integrasikan Reap API client.
+7. Simpan hasil clip ke storage.
+8. Buat page clip review.
+9. Integrasikan Reap Publish untuk upload TikTok.
+10. Tambahkan retry dan logging.
+11. Tambahkan caption generation.
 
 ---
 
@@ -1184,14 +1201,11 @@ Beberapa keputusan yang masih perlu ditentukan:
 
 1. Platform upload MVP sudah ditentukan: TikTok terlebih dahulu.
 2. Storage yang digunakan: Supabase Storage, S3, atau Cloudflare R2?
-3. Backend stack: Node.js/NestJS atau Python/FastAPI?
-4. Apakah user perlu approval sebelum upload otomatis?
-5. Apakah caption dibuat otomatis sebelum user review atau langsung dipakai?
-6. Apakah video input hanya URL atau juga file upload sejak MVP?
-7. Apakah produk ini untuk penggunaan pribadi/internal atau akan menjadi SaaS publik?
-8. Bagaimana batas concurrency Playwright yang aman?
-9. Bagaimana fallback jika OpusClip session expired?
-10. Apakah perlu sistem scheduling upload?
+3. Apakah user perlu approval sebelum upload otomatis?
+4. Apakah caption dibuat otomatis sebelum user review atau langsung dipakai?
+5. Apakah video input hanya URL atau juga file upload sejak MVP?
+6. Apakah produk ini untuk penggunaan pribadi/internal atau akan menjadi SaaS publik?
+7. Apakah perlu sistem scheduling upload?
 
 ---
 
@@ -1201,26 +1215,25 @@ Untuk MVP saat ini, gunakan pendekatan berikut:
 
 ```text
 Web UI + Backend API + Database + Queue
-        ↓
-Playwright Worker untuk OpusClip
-        ↓
+         ↓
+Reap API untuk pembuatan clip
+         ↓
+Webhook / Polling untuk download hasil
+         ↓
 Storage untuk hasil clip
-        ↓
-Composio untuk upload ke TikTok
+         ↓
+Reap Publish API untuk upload ke TikTok
 ```
 
-Pendekatan ini cukup realistis untuk validasi ide karena tidak membutuhkan akses OpusClip API. Namun, sistem harus dibuat modular agar ketika API resmi tersedia, modul Playwright dapat diganti dengan modul API tanpa mengubah keseluruhan produk.
-
-Playwright sebaiknya diperlakukan sebagai solusi MVP/internal, bukan fondasi production jangka panjang tanpa izin atau API resmi dari OpusClip.
-
+Pendekatan ini lebih stabil daripada Playwright automation karena menggunakan API resmi. Sistem dibuat modular agar integrasi Reap dapat diganti dengan platform clipping lain di masa depan tanpa mengubah keseluruhan produk.
 
 # PROJECT_BRIEF.md — AI Automation Video Clipper
 
 ## Product Summary
 
-AI Automation Video Clipper adalah aplikasi web untuk membantu user memproses daftar video menjadi short clips menggunakan OpusClip, menyimpan hasil clip ke storage, lalu mengunggah clip ke TikTok menggunakan Composio.
+AI Automation Video Clipper adalah aplikasi web untuk membantu user memproses daftar video menjadi short clips menggunakan Reap API, menyimpan hasil clip ke storage, lalu mengunggah clip ke TikTok menggunakan Reap Publish API.
 
-Untuk MVP, sistem menggunakan Playwright Worker untuk mengotomasi OpusClip karena OpusClip API tidak tersedia secara terbuka untuk small-volume user. Upload ke TikTok menggunakan Composio.
+Untuk MVP, sistem menggunakan Reap REST API untuk pembuatan clip dan Reap Publish untuk upload ke TikTok. Tidak lagi menggunakan Playwright browser automation atau Composio.
 
 ## MVP Focus
 
@@ -1228,11 +1241,12 @@ MVP hanya fokus pada:
 - Input video URL atau upload file video.
 - Membuat video task.
 - Queue processing.
-- Playwright Worker untuk OpusClip.
+- Reap API Worker untuk pembuatan clip.
+- Webhook atau polling untuk download hasil clip.
 - Menyimpan hasil clip ke storage.
 - Preview hasil clip.
 - Edit title/caption/hashtag.
-- Upload hasil clip ke TikTok menggunakan Composio.
+- Upload hasil clip ke TikTok menggunakan Reap Publish.
 - Retry task gagal.
 - Basic logging.
 
@@ -1244,8 +1258,8 @@ MVP tidak mencakup:
 - Upload ke Instagram Reels.
 - Multi-tenant enterprise.
 - Payment/subscription.
-- Bypass CAPTCHA, rate limit, atau sistem keamanan OpusClip.
-- Automation massal tanpa izin.
+- Playwright browser automation.
+- Composio integration.
 
 ## Recommended Tech Stack
 
@@ -1253,7 +1267,6 @@ Frontend:
 - Next.js
 - TypeScript
 - Tailwind CSS
-- Shadcn UI
 
 Backend:
 - Next.js Route Handlers
@@ -1266,38 +1279,41 @@ Queue:
 - Redis
 - BullMQ
 
-Automation:
-- Playwright Worker
+Clip Generation:
+- Reap API (REST)
 
 Storage:
 - Storage service abstraction
-- Initial target: Supabase Storage or Cloudflare R2
+- Initial target: Supabase Storage atau Cloudflare R2
 
 Uploader:
-- Composio TikTok integration
+- Reap Publish API (TikTok integration)
 
 Auth:
-- Supabase Auth or NextAuth placeholder for MVP
+- NextAuth placeholder for MVP
 
 ## System Architecture
 
+```text
 Client
 → Web UI
 → Backend API
 → Database + Queue
-→ Playwright Worker for OpusClip
+→ Reap Processing Worker
+→ Webhook Handler / Polling Worker
 → Storage
-→ Composio TikTok Uploader
+→ Reap Publish Worker
 → TikTok
+```
 
 ## Core Status Lifecycle
 
 Video status:
 - pending
 - queued
-- uploading_to_opusclip
-- processing_in_opusclip
-- downloading_clips
+- uploading_to_reap
+- processing_in_reap
+- downloading_from_reap
 - storing_clips
 - generating_caption
 - ready_to_upload
@@ -1314,6 +1330,14 @@ Clip status:
 - uploaded
 - failed
 
+Upload status:
+- queued
+- uploading
+- publishing
+- completed
+- failed
+- cancelled
+
 ## Required Pages
 
 1. Dashboard
@@ -1329,8 +1353,11 @@ POST /api/videos
 GET /api/videos
 GET /api/videos/:id
 POST /api/videos/:id/retry
+POST /api/videos/:id/poll
 PATCH /api/clips/:id
 POST /api/clips/:id/upload
+POST /api/reap/webhook
+GET /api/reap/integrations
 
 ## Required Database Models
 
@@ -1361,10 +1388,11 @@ Phase 3:
 - Clip storage abstraction
 
 Phase 4:
-- Playwright OpusClip worker skeleton
-- Saved session support
-- Submit video to OpusClip
-- Download/store clip placeholder
+- Reap API client
+- Reap processing worker
+- Webhook handler
+- Polling worker fallback
+- Download/store clips
 
 Phase 5:
 - Clip preview
@@ -1372,21 +1400,26 @@ Phase 5:
 - Caption generation placeholder
 
 Phase 6:
-- Composio TikTok uploader
+- Reap Publish (TikTok)
 - Upload status tracking
 - Retry upload
 
 Phase 7:
 - Logging
-- Error screenshot
 - Worker health check
 - README and setup docs
+
+Phase 8:
+- UI updates
+- Integration settings page
+- Status badge updates
+- Final cleanup
 
 ## Important Constraints
 
 - Do not hardcode secrets.
 - Do not expose API keys to frontend.
-- Do not bypass CAPTCHA or security mechanisms.
-- Keep Playwright module replaceable by future OpusClip API module.
-- Keep Composio TikTok uploader modular.
+- Keep Reap API module replaceable by future clip generation service.
+- Keep Reap Publish module replaceable by future upload service.
 - Implement each phase incrementally.
+- Respect Reap rate limit (10 requests per minute per API key).

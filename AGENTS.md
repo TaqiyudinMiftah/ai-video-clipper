@@ -6,7 +6,7 @@ AI Automation Video Clipper
 
 ## Main Goal
 
-Build an MVP web application that allows users to submit videos, process them into short clips using OpusClip automation, store the resulting clips, and upload them to TikTok using Composio.
+Build an MVP web application that allows users to submit videos, process them into short clips using the Reap API, store the resulting clips, and publish them to TikTok using Reap's built-in Publish API.
 
 ## Source of Truth
 
@@ -39,8 +39,7 @@ Use:
 - PostgreSQL
 - Redis
 - BullMQ
-- Playwright
-- Composio
+- Reap API (REST)
 - Storage abstraction
 
 ## Architecture Rules
@@ -53,10 +52,8 @@ Separate the app into these modules:
 - Queue layer
 - Worker layer
 - Storage service
-- OpusClip automation service
-- Composio TikTok uploader service
-
-Do not mix Playwright automation code directly into API routes.
+- Reap API client
+- Reap Publish service
 
 Do not run long-running jobs directly inside HTTP request handlers.
 
@@ -74,23 +71,15 @@ Workers should process long-running tasks.
 - Do not bypass CAPTCHA, rate limits, or anti-bot systems.
 - Do not implement scraping beyond the minimum needed for the user-owned workflow.
 
-## Playwright Rules
+## Reap Rules
 
-For OpusClip automation:
+For clip generation and TikTok publishing:
 
-- Keep Playwright scripts inside workers or automation modules.
-- Support saved browser session.
-- Use stable selectors when possible.
-- Save screenshot/logs on failure.
-- Keep concurrency low.
-- Make the module replaceable by a future OpusClip API integration.
-
-## Composio Rules
-
-For TikTok upload:
-
-- Keep Composio integration in a dedicated service.
-- Do not hardcode Composio API keys.
+- Keep Reap API client modular in `src/lib/reap/`.
+- Do not hardcode Reap API keys.
+- Respect Reap rate limits (10 requests per minute per API key).
+- Store `reapProjectId` and `reapClipId` in database.
+- Use webhooks for project status tracking when possible; polling as fallback.
 - Store upload status in database.
 - Handle upload failure and retry.
 - Keep YouTube and Instagram out of MVP unless explicitly requested.
