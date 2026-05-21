@@ -2,10 +2,10 @@ import "dotenv/config";
 import { QueueEvents, Worker } from "bullmq";
 import { prisma } from "../../src/lib/prisma";
 import {
-  REAP_PROCESSING_QUEUE_NAME,
+  VIDEO_PROCESSING_QUEUE_NAME,
   DEFAULT_REAP_WORKER_CONCURRENCY,
-} from "../../src/lib/queue/reap-queue";
-import type { ReapProcessingJobData } from "../../src/lib/queue/reap-queue";
+} from "../../src/lib/queue/video-queue";
+import type { VideoProcessingJobData } from "../../src/lib/queue/video-queue";
 import { createWorkerRedisConnection } from "../../src/lib/queue/redis";
 import { processReapVideoJob } from "./processor";
 
@@ -17,17 +17,17 @@ function getWorkerConcurrency() {
 const workerConnection = createWorkerRedisConnection("ai-video-clipper-reap-worker");
 const eventsConnection = createWorkerRedisConnection("ai-video-clipper-reap-events");
 
-const worker = new Worker<ReapProcessingJobData>(REAP_PROCESSING_QUEUE_NAME, processReapVideoJob, {
+const worker = new Worker<VideoProcessingJobData>(VIDEO_PROCESSING_QUEUE_NAME, processReapVideoJob, {
   connection: workerConnection,
   concurrency: getWorkerConcurrency(),
 });
 
-const queueEvents = new QueueEvents(REAP_PROCESSING_QUEUE_NAME, {
+const queueEvents = new QueueEvents(VIDEO_PROCESSING_QUEUE_NAME, {
   connection: eventsConnection,
 });
 
 worker.on("ready", () => {
-  console.log(`[reap-worker] Listening on queue "${REAP_PROCESSING_QUEUE_NAME}"`);
+  console.log(`[reap-worker] Listening on queue "${VIDEO_PROCESSING_QUEUE_NAME}"`);
 });
 
 worker.on("completed", (job) => {

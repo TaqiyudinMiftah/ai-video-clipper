@@ -2,8 +2,8 @@ import { randomUUID } from "node:crypto";
 import type { Job } from "bullmq";
 import { prisma } from "../../src/lib/prisma";
 import { createJobLogger, serializeError } from "../../src/lib/observability/logger";
-import { REAP_MAX_ATTEMPTS } from "../../src/lib/queue/reap-queue";
-import type { ReapProcessingJobData } from "../../src/lib/queue/reap-queue";
+import { REAP_MAX_ATTEMPTS } from "../../src/lib/queue/video-queue";
+import type { VideoProcessingJobData } from "../../src/lib/queue/video-queue";
 import {
   getReapConfig,
   requireReapApiKey,
@@ -62,7 +62,7 @@ async function uploadSourceToReap(sourceStoragePath: string): Promise<string> {
   return uploadUrlResponse.id;
 }
 
-export async function processReapVideoJob(job: Job<ReapProcessingJobData>) {
+export async function processReapVideoJob(job: Job<VideoProcessingJobData>) {
   const { dbJobId, userId, videoId, sourceUrl, sourceStoragePath } = job.data;
   const attempt = job.attemptsMade + 1;
   const maxAttempts = typeof job.opts.attempts === "number" ? job.opts.attempts : REAP_MAX_ATTEMPTS;
