@@ -190,7 +190,7 @@ export default async function VideoDetailPage({ params }: VideoDetailPageProps) 
               </h2>
             </div>
             <p className="max-w-md text-sm leading-6 text-[color:var(--muted)]">
-              Prepare metadata, then queue TikTok upload through the dedicated Composio worker.
+              Prepare metadata, then queue TikTok upload through the Reap publish worker.
             </p>
           </div>
 
@@ -238,7 +238,7 @@ export default async function VideoDetailPage({ params }: VideoDetailPageProps) 
                 <p className="text-xs font-black uppercase tracking-[0.28em] text-[color:var(--moss)]">Awaiting output</p>
                 <h3 className="mt-3 text-3xl font-black tracking-[-0.05em]">No clip records yet.</h3>
                 <p className="mx-auto mt-3 max-w-xl leading-7 text-[color:var(--muted)]">
-                  Once the OpusClip worker creates clip rows, this panel will show previews and editable metadata.
+                  Once the Reap worker creates clip records, this panel will show previews and editable metadata.
                 </p>
               </div>
             )}
