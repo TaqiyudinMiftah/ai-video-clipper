@@ -19,6 +19,18 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+ENV DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ai_video_clipper
+ENV REDIS_URL=redis://localhost:6379
+ENV NEXT_PUBLIC_APP_URL=http://localhost:3000
+ENV NEXTAUTH_SECRET=build_time_placeholder_secret
+ENV NEXTAUTH_URL=http://localhost:3000
+ENV STORAGE_PROVIDER=supabase
+ENV SUPABASE_URL=https://example.supabase.co
+ENV SUPABASE_SERVICE_ROLE_KEY=build_time_placeholder_service_role_key
+ENV SUPABASE_STORAGE_BUCKET=clips
+ENV REAP_API_KEY=build_time_placeholder_reap_key
+ENV REAP_BASE_URL=https://public.reap.video/api/v1/automation
+
 RUN npm run prisma:generate
 RUN npm run build
 RUN npm prune --omit=dev
@@ -37,6 +49,7 @@ COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
 COPY --from=builder --chown=nextjs:nodejs /app/package-lock.json ./package-lock.json
+COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/scripts ./scripts
 COPY --from=builder --chown=nextjs:nodejs /app/src ./src
