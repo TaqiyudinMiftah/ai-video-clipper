@@ -208,6 +208,7 @@ curl -X POST http://localhost:3000/api/videos/{videoId}/poll \
 ```bash
 npm run typecheck
 npm run build
+npm run prisma:deploy
 npm run prisma:studio
 npm run worker:reap
 npm run worker:reap-polling
@@ -267,14 +268,53 @@ Reap Publish Worker → Reap API → TikTok
 - The publish worker retries failed TikTok uploads up to 3 attempts with a 5 minute fixed delay.
 - Reap API calls are globally rate-limited through Redis by `REAP_RATE_LIMIT_MAX_REQUESTS` and `REAP_RATE_LIMIT_WINDOW_MS`.
 - `npm run worker:health` prints Redis ping status, BullMQ queue counts, and database job counts.
+- `GET /api/health` checks database and Redis reachability for app/container health checks.
 - API JSON request bodies use Zod validation and return field-level validation details.
 - Dashboard and video ledger pages show live database-backed error states and retry buttons.
 - API handlers do not run long-lived automation work.
 - Reap credentials must stay server-side and must not be exposed to the frontend.
 
+## Production Container Deployment
+
+The included Docker setup builds one image that can run the Next.js app, Prisma migrations, or any worker process.
+
+1. Create a production env file from `.env.example`:
+
+   ```bash
+   cp .env.example .env.production
+   ```
+
+2. Fill `.env.production` with managed production/staging services. `npm run production:check` should report `0 errors` before deployment.
+
+3. Build the image:
+
+   ```bash
+   docker compose -f docker-compose.production.example.yml build
+   ```
+
+4. Run the production preflight inside the image:
+
+   ```bash
+   docker compose -f docker-compose.production.example.yml run --rm app npm run production:check
+   ```
+
+5. Apply database migrations:
+
+   ```bash
+   docker compose -f docker-compose.production.example.yml run --rm migrate
+   ```
+
+6. Start the app and workers:
+
+   ```bash
+   docker compose -f docker-compose.production.example.yml up -d app worker-reap worker-reap-polling worker-reap-publish worker-reap-publish-status
+   ```
+
+Use managed Postgres and Redis for real production. The root `docker-compose.yml` remains local-development infrastructure only.
+
 ## TODO Before Production
 
-- Production deployment: add secrets management, managed Redis/Postgres, worker process supervision, migrations, backups, and observability dashboards.
+- Production deployment: add secrets management, managed Redis/Postgres, worker process supervision, backups, and observability dashboards.
 - Run `npm run production:check` in staging/production deploy pipelines before `next build`.
 - Auth hardening: configure OAuth providers, rotate `NEXTAUTH_SECRET`, and keep `ALLOW_DEV_AUTH` disabled outside local/internal development.
 - Webhook hardening: set `REAP_WEBHOOK_SECRET`; enable timestamp verification only when Reap sends timestamped signatures.

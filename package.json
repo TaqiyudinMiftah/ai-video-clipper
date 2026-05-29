@@ -17,6 +17,7 @@
     "setup:check": "tsx -r dotenv/config scripts/check-integrations.ts",
     "production:check": "tsx -r dotenv/config scripts/check-production.ts",
     "prisma:generate": "prisma generate",
+    "prisma:deploy": "prisma migrate deploy",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"
   },
@@ -29,8 +30,10 @@
     "ioredis": "^5.10.1",
     "next": "^16.2.2",
     "next-auth": "^4.24.14",
+    "prisma": "^6.19.2",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
+    "tsx": "^4.21.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -38,9 +41,7 @@
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
-    "prisma": "^6.19.2",
     "tailwindcss": "^4.1.17",
-    "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
 }
