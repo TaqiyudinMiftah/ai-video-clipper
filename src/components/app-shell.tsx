@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { SignOutButton } from "@/components/auth-actions";
+import { requireCurrentUser } from "@/lib/auth";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
@@ -53,7 +55,7 @@ function renderTitle(title: string) {
   );
 }
 
-export function AppShell({
+export async function AppShell({
   children,
   eyebrow,
   title,
@@ -66,6 +68,9 @@ export function AppShell({
   description: string;
   activeHref?: string;
 }) {
+  const user = await requireCurrentUser();
+  const userLabel = user.name || user.email;
+
   return (
     <div className="min-h-screen text-[#e2e2e1]">
       <header className="fixed left-0 right-0 top-0 z-50 border-b border-[rgba(69,73,50,0.35)] bg-[#121414]/85 shadow-sm shadow-black/40 backdrop-blur-xl">
@@ -105,9 +110,18 @@ export function AppShell({
             <button type="button" aria-label="Notifications" className="text-[#c6c9ab] transition hover:text-[#dffe00] active:scale-95">
               <BellIcon />
             </button>
-            <button type="button" aria-label="Account" className="text-[#c6c9ab] transition hover:text-[#dffe00] active:scale-95">
-              <UserIcon />
-            </button>
+            <div className="hidden items-center gap-3 rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] px-3 py-2 md:flex">
+              <span className="text-[#c6c9ab]">
+                <UserIcon />
+              </span>
+              <div className="grid max-w-44">
+                <span className="truncate font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase leading-4 tracking-[0.18em] text-[#909378]">
+                  Signed in
+                </span>
+                <span className="truncate text-sm font-semibold text-white">{userLabel}</span>
+              </div>
+              <SignOutButton />
+            </div>
           </div>
         </div>
       </header>

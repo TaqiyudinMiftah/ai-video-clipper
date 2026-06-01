@@ -22,6 +22,9 @@ export default function HomePage() {
             AI Video Clipper
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
+            <Link href="/login" className="border-b-2 border-transparent pb-1 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.25em] text-[#c6c9ab] transition hover:text-[#dffe00]">
+              Login
+            </Link>
             <Link href="/dashboard" className="border-b-2 border-[#dffe00] pb-1 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.25em] text-[#dffe00]">
               Dashboard
             </Link>
@@ -67,8 +70,11 @@ export default function HomePage() {
               </div>
             </div>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Link href="/dashboard" className="inline-flex h-14 items-center justify-center rounded-lg bg-[#d3f000] px-6 py-3 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.18em] text-[#2c3400] transition hover:-translate-y-0.5 hover:bg-[#39ff14]">
-                Access dashboard
+              <Link href="/login" className="inline-flex h-14 items-center justify-center rounded-lg bg-[#d3f000] px-6 py-3 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.18em] text-[#2c3400] transition hover:-translate-y-0.5 hover:bg-[#39ff14]">
+                Login or sign up
+              </Link>
+              <Link href="/dashboard" className="inline-flex h-14 items-center justify-center rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] px-6 py-3 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.18em] text-[#c6c9ab] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)] hover:text-[#dffe00]">
+                Open dashboard
               </Link>
               <span className="font-[family-name:var(--font-mono)] text-[13px] font-medium leading-[18px] text-[#c6c9ab]">
                 <span className="mr-2 inline-block size-2 rounded-full bg-[#39ff14]" />

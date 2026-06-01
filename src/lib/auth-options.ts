@@ -42,6 +42,9 @@ export const authOptions: NextAuthOptions = {
     strategy: "database",
   },
   providers: getProviders(),
+  pages: {
+    signIn: "/login",
+  },
   callbacks: {
     async signIn({ user }) {
       return Boolean(user.email);

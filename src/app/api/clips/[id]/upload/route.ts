@@ -4,6 +4,7 @@ import { requireCurrentUser } from "@/lib/auth";
 import { uploadClipRequestSchema, validationErrorResponse } from "@/lib/api/validation";
 import { enqueueClipUploadJob } from "@/lib/queue/upload-queue";
 import { prisma } from "@/lib/prisma";
+import { getClipForUser } from "@/lib/user-owned-records";
 
 export const runtime = "nodejs";
 
@@ -25,12 +26,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
   const platform = parsed.data.platform;
 
-  const clip = await prisma.clip.findFirst({
-    where: {
-      id,
-      userId: user.id,
-    },
-  });
+  const clip = await getClipForUser(user.id, id);
 
   if (!clip) {
     return NextResponse.json({ error: "Clip not found." }, { status: 404 });

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentUser } from "@/lib/auth";
 import { normalizeHashtags, updateClipMetadataRequestSchema, validationErrorResponse } from "@/lib/api/validation";
 import { prisma } from "@/lib/prisma";
+import { getClipForUser } from "@/lib/user-owned-records";
 
 export const runtime = "nodejs";
 
@@ -26,12 +27,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     return validationErrorResponse(parsed.error);
   }
 
-  const clip = await prisma.clip.findFirst({
-    where: {
-      id,
-      userId: user.id,
-    },
-  });
+  const clip = await getClipForUser(user.id, id);
 
   if (!clip) {
     return NextResponse.json({ error: "Clip not found." }, { status: 404 });
