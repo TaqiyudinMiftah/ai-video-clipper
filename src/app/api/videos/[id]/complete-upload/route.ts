@@ -9,7 +9,6 @@ import {
   validationErrorResponse,
 } from "@/lib/api/validation";
 import { prisma } from "@/lib/prisma";
-import { enqueueVideoOrFail } from "@/lib/services/video-task-queue";
 import { getStorageService } from "@/lib/storage";
 import { getVideoForUser } from "@/lib/user-owned-records";
 
@@ -82,7 +81,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
       id: video.id,
     },
     data: {
-      status: "queued",
+      status: "pending",
       errorMessage: null,
     },
   });
@@ -103,35 +102,11 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     },
   });
 
-  const enqueueResult = await enqueueVideoOrFail(updatedVideo);
-
-  if (!enqueueResult.ok) {
-    await prisma.video.update({
-      where: {
-        id: updatedVideo.id,
-      },
-      data: {
-        status: "failed",
-        errorMessage: enqueueResult.errorMessage,
-      },
-    });
-
-    return NextResponse.json(
-      {
-        error: enqueueResult.errorMessage,
-        videoId: updatedVideo.id,
-        status: "failed",
-      },
-      { status: 503 },
-    );
-  }
-
   return NextResponse.json(
     {
       videoId: updatedVideo.id,
       status: updatedVideo.status,
       sourceStoragePath: updatedVideo.sourceStoragePath,
-      jobId: enqueueResult.job.id,
     },
     { status: 201 },
   );

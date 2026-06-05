@@ -47,6 +47,7 @@ async function main() {
         status: true,
         errorMessage: true,
         reapProjectId: true,
+        reapConfig: true,
         createdAt: true,
         updatedAt: true,
         clips: {

@@ -105,7 +105,7 @@ export function VideoSubmitForm() {
         return;
       }
 
-      setMessage("Queueing processing job...");
+      setMessage("Confirming source upload...");
       const completeResponse = await fetch(`/api/videos/${createResult.videoId}/complete-upload`, {
         method: "POST",
         headers: {
@@ -126,7 +126,7 @@ export function VideoSubmitForm() {
       }
 
       setState("success");
-      setMessage("Video task created. Redirecting to detail...");
+      setMessage("Source ready. Redirecting to clipping configuration...");
       router.push(`/videos/${completeResult.videoId || createResult.videoId}`);
       return;
     }
@@ -152,7 +152,7 @@ export function VideoSubmitForm() {
     }
 
     setState("success");
-    setMessage("Video task created. Redirecting to detail...");
+    setMessage("Video draft created. Redirecting to clipping configuration...");
     router.push(`/videos/${result.videoId}`);
   }
 
@@ -209,7 +209,7 @@ export function VideoSubmitForm() {
           disabled={state === "submitting"}
           className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-[#d3f000] px-5 py-3 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.18em] text-[#2c3400] transition hover:-translate-y-0.5 hover:bg-[#39ff14] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
         >
-          {state === "submitting" ? "Creating task..." : "Create clipping task"}
+          {state === "submitting" ? "Creating draft..." : "Create clipping task"}
         </button>
 
         {message ? (

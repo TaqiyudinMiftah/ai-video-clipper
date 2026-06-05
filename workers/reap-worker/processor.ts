@@ -12,6 +12,7 @@ import {
   createClips,
   ReapApiError,
 } from "../../src/lib/reap";
+import { buildCreateClipsPayload, readReapClippingConfig } from "../../src/lib/reap/clipping-config";
 import { getStorageService } from "../../src/lib/storage";
 import { enqueueReapPollingJob } from "../../src/lib/queue/reap-polling-queue";
 
@@ -92,6 +93,11 @@ export async function processReapVideoJob(job: Job<VideoProcessingJobData>) {
   });
 
   const config = getReapConfig();
+  const video = await prisma.video.findUnique({
+    where: { id: videoId },
+    select: { reapConfig: true },
+  });
+  const clippingConfig = readReapClippingConfig(video?.reapConfig);
 
   await logger.info("Reap worker started processing.", {
     phase: 2,
@@ -100,6 +106,7 @@ export async function processReapVideoJob(job: Job<VideoProcessingJobData>) {
     maxAttempts,
     sourceUrl,
     sourceStoragePath,
+    clippingConfig,
   });
 
   try {
@@ -116,17 +123,7 @@ export async function processReapVideoJob(job: Job<VideoProcessingJobData>) {
         sourceUrl,
       });
 
-      const project = await createClips({
-        sourceUrl,
-        genre: config.defaultGenre as "talking" | "screenshare" | "gaming",
-        exportOrientation: config.defaultOrientation as "landscape" | "portrait" | "square",
-        exportResolution: config.defaultResolution,
-        reframeClips: config.defaultReframe,
-        captionsPreset: config.defaultCaptionsPreset,
-        enableEmojis: config.defaultEnableEmojis,
-        enableHighlights: config.defaultEnableHighlights,
-        ...(config.defaultLanguage ? { language: config.defaultLanguage } : {}),
-      });
+      const project = await createClips(buildCreateClipsPayload(clippingConfig, { sourceUrl }));
 
       reapProjectId = project.id;
 
@@ -158,17 +155,7 @@ export async function processReapVideoJob(job: Job<VideoProcessingJobData>) {
         uploadId,
       });
 
-      const project = await createClips({
-        uploadId,
-        genre: config.defaultGenre as "talking" | "screenshare" | "gaming",
-        exportOrientation: config.defaultOrientation as "landscape" | "portrait" | "square",
-        exportResolution: config.defaultResolution,
-        reframeClips: config.defaultReframe,
-        captionsPreset: config.defaultCaptionsPreset,
-        enableEmojis: config.defaultEnableEmojis,
-        enableHighlights: config.defaultEnableHighlights,
-        ...(config.defaultLanguage ? { language: config.defaultLanguage } : {}),
-      });
+      const project = await createClips(buildCreateClipsPayload(clippingConfig, { uploadId }));
 
       reapProjectId = project.id;
 

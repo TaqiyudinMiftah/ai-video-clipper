@@ -4,10 +4,12 @@ import { AppShell } from "@/components/app-shell";
 import { ClipMetadataEditor } from "@/components/clip-metadata-editor";
 import { ClipPreview } from "@/components/clip-preview";
 import { ClipUploadPanel } from "@/components/clip-upload-panel";
+import { ReapClippingConfigurator } from "@/components/reap-clipping-configurator";
 import { RetryVideoButton } from "@/components/retry-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { readReapClippingConfig } from "@/lib/reap/clipping-config";
 import { getStorageService } from "@/lib/storage";
 
 export const dynamic = "force-dynamic";
@@ -138,6 +140,8 @@ export default async function VideoDetailPage({ params }: VideoDetailPageProps) 
   );
 
   const displayTitle = video.title || video.sourceUrl || video.sourceStoragePath || "Untitled video task";
+  const canConfigureClipping = ["pending", "failed", "cancelled"].includes(video.status);
+  const clippingConfig = readReapClippingConfig(video.reapConfig);
 
   return (
     <AppShell
@@ -182,6 +186,15 @@ export default async function VideoDetailPage({ params }: VideoDetailPageProps) 
           </div>
         </section>
 
+        {canConfigureClipping ? (
+          <div className="lg:col-span-8">
+            <ReapClippingConfigurator
+              videoId={video.id}
+              sourceLabel={displayTitle}
+              initialConfig={clippingConfig}
+            />
+          </div>
+        ) : (
         <section className="rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(22,21,20,0.84)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.40)] backdrop-blur-xl lg:col-span-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -245,6 +258,7 @@ export default async function VideoDetailPage({ params }: VideoDetailPageProps) 
             )}
           </div>
         </section>
+        )}
       </div>
 
       <section className="mt-5 rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(22,21,20,0.84)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.40)] backdrop-blur-xl">

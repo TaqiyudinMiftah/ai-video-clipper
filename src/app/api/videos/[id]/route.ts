@@ -49,6 +49,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     durationSeconds: video.durationSeconds,
     status: video.status,
     reapProjectId: video.reapProjectId,
+    reapConfig: video.reapConfig,
     errorMessage: video.errorMessage,
     retryCount: video.retryCount,
     createdAt: video.createdAt,

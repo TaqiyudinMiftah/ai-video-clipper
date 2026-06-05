@@ -12,7 +12,6 @@ import {
   validationErrorResponse,
 } from "@/lib/api/validation";
 import { prisma } from "@/lib/prisma";
-import { enqueueVideoOrFail } from "@/lib/services/video-task-queue";
 import { getStorageService } from "@/lib/storage";
 
 export const runtime = "nodejs";
@@ -44,6 +43,7 @@ export async function GET() {
       sourceStoragePath: video.sourceStoragePath,
       status: video.status,
       reapProjectId: video.reapProjectId,
+      reapConfig: video.reapConfig,
       clipCount: video.clips.length,
       errorMessage: video.errorMessage,
       createdAt: video.createdAt,
@@ -66,28 +66,14 @@ async function createUrlVideoTask(userId: string, body: unknown) {
       sourceType: "url",
       sourceUrl,
       title: title?.trim() || null,
-      status: "queued",
+      status: "pending",
     },
   });
-
-  const enqueueResult = await enqueueVideoOrFail(video);
-
-  if (!enqueueResult.ok) {
-    return NextResponse.json(
-      {
-        error: enqueueResult.errorMessage,
-        videoId: video.id,
-        status: "failed",
-      },
-      { status: 503 },
-    );
-  }
 
   return NextResponse.json(
     {
       videoId: video.id,
       status: video.status,
-      jobId: enqueueResult.job.id,
     },
     { status: 201 },
   );
@@ -155,7 +141,7 @@ async function createFileVideoTask(userId: string, formData: FormData) {
       },
       data: {
         sourceStoragePath,
-        status: "queued",
+        status: "pending",
       },
     });
 
@@ -217,25 +203,11 @@ async function createFileVideoTask(userId: string, formData: FormData) {
     },
   });
 
-  const enqueueResult = await enqueueVideoOrFail(updatedVideo);
-
-  if (!enqueueResult.ok) {
-    return NextResponse.json(
-      {
-        error: enqueueResult.errorMessage,
-        videoId: updatedVideo.id,
-        status: "failed",
-      },
-      { status: 503 },
-    );
-  }
-
   return NextResponse.json(
     {
       videoId: updatedVideo.id,
       status: updatedVideo.status,
       sourceStoragePath: updatedVideo.sourceStoragePath,
-      jobId: enqueueResult.job.id,
     },
     { status: 201 },
   );

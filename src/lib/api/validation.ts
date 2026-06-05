@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { reapClippingConfigSchema } from "@/lib/reap/clipping-config";
 
 export function isValidUrl(value: string) {
   try {
@@ -123,6 +124,8 @@ export const completeVideoFileUploadRequestSchema = z.strictObject({
   fileSize: z.number().int().positive(),
   contentType: z.string().trim().max(120).optional().nullable(),
 });
+
+export const startClippingRequestSchema = reapClippingConfigSchema;
 
 export const updateClipMetadataRequestSchema = z
   .strictObject({

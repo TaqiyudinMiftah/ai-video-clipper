@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireCurrentUser } from "@/lib/auth";
-import { enqueueVideoProcessingJob } from "@/lib/queue/video-queue";
 import { prisma } from "@/lib/prisma";
+import { enqueueVideoOrFail } from "@/lib/services/video-task-queue";
 
 export const runtime = "nodejs";
 
@@ -43,21 +43,12 @@ export async function POST(_request: Request, { params }: RouteContext) {
     },
   });
 
-  let jobId: string;
+  const enqueueResult = await enqueueVideoOrFail(updatedVideo);
 
-  try {
-    const job = await enqueueVideoProcessingJob({
-      userId: user.id,
-      videoId: updatedVideo.id,
-      sourceUrl: updatedVideo.sourceUrl,
-      sourceStoragePath: updatedVideo.sourceStoragePath,
-    });
-
-    jobId = job.id;
-  } catch {
+  if (!enqueueResult.ok) {
     return NextResponse.json(
       {
-        error: "Video was marked for retry but could not be enqueued. Check REDIS_URL and Redis availability.",
+        error: enqueueResult.errorMessage,
         videoId: updatedVideo.id,
         status: "failed",
       },
@@ -68,6 +59,6 @@ export async function POST(_request: Request, { params }: RouteContext) {
   return NextResponse.json({
     videoId: updatedVideo.id,
     status: updatedVideo.status,
-    jobId,
+    jobId: enqueueResult.job.id,
   });
 }
