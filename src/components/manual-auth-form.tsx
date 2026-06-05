@@ -123,7 +123,7 @@ export function ManualAuthForm({ mode, callbackUrl = "/dashboard" }: ManualAuthF
             required
             minLength={isSignup ? 8 : 1}
             maxLength={128}
-            className="h-12 w-full rounded-lg border border-[rgba(223,254,0,0.18)] bg-[rgba(7,8,7,0.72)] px-4 pr-12 text-sm text-white outline-none transition placeholder:text-[#777b65] focus:border-[#dffe00] focus:ring-2 focus:ring-[rgba(223,254,0,0.18)]"
+            className="h-12 w-full rounded-lg border border-[rgba(223,254,0,0.18)] bg-[rgba(7,8,7,0.72)] px-4 pr-14 text-sm text-white outline-none transition placeholder:text-[#777b65] focus:border-[#dffe00] focus:ring-2 focus:ring-[rgba(223,254,0,0.18)]"
             placeholder={isSignup ? "Minimum 8 characters" : "Your password"}
           />
           <button
@@ -131,7 +131,7 @@ export function ManualAuthForm({ mode, callbackUrl = "/dashboard" }: ManualAuthF
             onClick={() => setShowPassword((value) => !value)}
             aria-label={showPassword ? "Hide password" : "Show password"}
             title={showPassword ? "Hide password" : "Show password"}
-            className="absolute right-2 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-[#c6c9ab] transition hover:bg-[rgba(223,254,0,0.10)] hover:text-[#dffe00] focus:outline-none focus:ring-2 focus:ring-[rgba(223,254,0,0.28)]"
+            className="absolute right-2 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md border border-[rgba(223,254,0,0.16)] bg-[rgba(22,21,20,0.78)] text-[#dffe00] transition hover:bg-[rgba(223,254,0,0.12)] hover:text-[#39ff14] focus:outline-none focus:ring-2 focus:ring-[rgba(223,254,0,0.28)]"
           >
             {showPassword ? <EyeOffIcon /> : <EyeIcon />}
           </button>
@@ -157,7 +157,7 @@ export function ManualAuthForm({ mode, callbackUrl = "/dashboard" }: ManualAuthF
 
 function EyeIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
@@ -166,7 +166,7 @@ function EyeIcon() {
 
 function EyeOffIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg aria-hidden="true" viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="m3 3 18 18" />
       <path d="M10.6 10.6a2 2 0 0 0 2.8 2.8" />
       <path d="M9.9 5.2A10.2 10.2 0 0 1 12 5c6.5 0 10 7 10 7a17.7 17.7 0 0 1-3 4.1" />

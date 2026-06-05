@@ -91,7 +91,7 @@ export const registerRequestSchema = z.strictObject({
   password: z.string().min(8).max(128),
 });
 
-export const manualLoginRequestSchema = z.strictObject({
+export const manualLoginRequestSchema = z.object({
   email: authEmailSchema,
   password: z.string().min(1).max(128),
 });
