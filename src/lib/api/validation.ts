@@ -78,6 +78,24 @@ const httpUrlSchema = z
     }
   }, "URL must use http or https.");
 
+const authEmailSchema = z
+  .string()
+  .trim()
+  .max(255)
+  .email()
+  .transform((value) => value.toLowerCase());
+
+export const registerRequestSchema = z.strictObject({
+  name: z.string().trim().max(120).optional().nullable(),
+  email: authEmailSchema,
+  password: z.string().min(8).max(128),
+});
+
+export const manualLoginRequestSchema = z.strictObject({
+  email: authEmailSchema,
+  password: z.string().min(1).max(128),
+});
+
 export const createVideoUrlRequestSchema = z.strictObject({
   sourceType: z.literal("url"),
   sourceUrl: httpUrlSchema,

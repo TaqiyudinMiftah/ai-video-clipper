@@ -1,0 +1,144 @@
+"use client";
+
+import { FormEvent, useState } from "react";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+
+type ManualAuthFormProps = {
+  mode: "login" | "signup";
+  callbackUrl?: string;
+};
+
+type RegisterResponse = {
+  error?: string;
+};
+
+export function ManualAuthForm({ mode, callbackUrl = "/dashboard" }: ManualAuthFormProps) {
+  const router = useRouter();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const isSignup = mode === "signup";
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+
+    const normalizedEmail = email.trim().toLowerCase();
+
+    try {
+      if (isSignup) {
+        const response = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: name.trim() || null,
+            email: normalizedEmail,
+            password,
+          }),
+        });
+
+        if (!response.ok) {
+          const data = (await response.json().catch(() => ({}))) as RegisterResponse;
+          setError(data.error || "Unable to create account.");
+          return;
+        }
+      }
+
+      const result = await signIn("credentials", {
+        email: normalizedEmail,
+        password,
+        callbackUrl,
+        redirect: false,
+      });
+
+      if (!result || result.error) {
+        setError("Invalid email or password.");
+        return;
+      }
+
+      router.push(result.url || callbackUrl);
+      router.refresh();
+    } catch {
+      setError("Authentication failed. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="grid gap-4">
+      {isSignup ? (
+        <label className="grid gap-2">
+          <span className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[#c6c9ab]">
+            Name
+          </span>
+          <input
+            type="text"
+            name="name"
+            autoComplete="name"
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            maxLength={120}
+            className="h-12 rounded-lg border border-[rgba(223,254,0,0.18)] bg-[rgba(7,8,7,0.72)] px-4 text-sm text-white outline-none transition placeholder:text-[#777b65] focus:border-[#dffe00] focus:ring-2 focus:ring-[rgba(223,254,0,0.18)]"
+            placeholder="Your name"
+          />
+        </label>
+      ) : null}
+
+      <label className="grid gap-2">
+        <span className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[#c6c9ab]">
+          Email
+        </span>
+        <input
+          type="email"
+          name="email"
+          autoComplete="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          required
+          maxLength={255}
+          className="h-12 rounded-lg border border-[rgba(223,254,0,0.18)] bg-[rgba(7,8,7,0.72)] px-4 text-sm text-white outline-none transition placeholder:text-[#777b65] focus:border-[#dffe00] focus:ring-2 focus:ring-[rgba(223,254,0,0.18)]"
+          placeholder="you@example.com"
+        />
+      </label>
+
+      <label className="grid gap-2">
+        <span className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-[0.18em] text-[#c6c9ab]">
+          Password
+        </span>
+        <input
+          type="password"
+          name="password"
+          autoComplete={isSignup ? "new-password" : "current-password"}
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          required
+          minLength={isSignup ? 8 : 1}
+          maxLength={128}
+          className="h-12 rounded-lg border border-[rgba(223,254,0,0.18)] bg-[rgba(7,8,7,0.72)] px-4 text-sm text-white outline-none transition placeholder:text-[#777b65] focus:border-[#dffe00] focus:ring-2 focus:ring-[rgba(223,254,0,0.18)]"
+          placeholder={isSignup ? "Minimum 8 characters" : "Your password"}
+        />
+      </label>
+
+      {error ? (
+        <div className="rounded-lg border border-[#ffb4ab] bg-[rgba(255,180,171,0.10)] px-4 py-3 text-sm font-bold leading-6 text-[#ffb4ab]">
+          {error}
+        </div>
+      ) : null}
+
+      <button
+        type="submit"
+        disabled={isSubmitting}
+        className="mt-1 inline-flex h-12 items-center justify-center rounded-lg bg-[#d3f000] px-5 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.18em] text-[#2c3400] transition hover:-translate-y-0.5 hover:bg-[#39ff14] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+      >
+        {isSubmitting ? "Please wait" : isSignup ? "Create account" : "Sign in"}
+      </button>
+    </form>
+  );
+}

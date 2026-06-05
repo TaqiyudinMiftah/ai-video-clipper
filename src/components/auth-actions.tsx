@@ -19,7 +19,7 @@ export function AuthButtons({ providers, callbackUrl = "/dashboard" }: AuthButto
   if (!enabledProviders.length) {
     return (
       <div className="rounded-xl border border-[#ffb4ab] bg-[rgba(255,180,171,0.10)] p-4 text-sm font-bold leading-6 text-[#ffb4ab]">
-        No OAuth provider is configured. Set Google or GitHub auth environment variables before enabling production sign-in.
+        No OAuth provider is configured. You can still sign in with email and password.
       </div>
     );
   }

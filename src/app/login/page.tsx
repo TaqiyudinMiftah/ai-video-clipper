@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { AuthButtons } from "@/components/auth-actions";
+import { ManualAuthForm } from "@/components/manual-auth-form";
 import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +25,14 @@ function getAuthProviders() {
       ),
     },
   ];
+}
+
+function getSignupHref(callbackUrl?: string) {
+  if (!callbackUrl) {
+    return "/signup";
+  }
+
+  return `/signup?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 }
 
 export default async function LoginPage({
@@ -50,7 +59,7 @@ export default async function LoginPage({
             Account access
           </p>
           <h1 className="mt-4 font-[family-name:var(--font-display)] text-[3rem] font-black leading-[3.25rem] tracking-[-0.05em] text-[#dffe00] md:text-[4.5rem] md:leading-[5rem]">
-            Sign in to your workspace.
+            Sign in or create your workspace.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-[#c6c9ab]">
             Each operator gets isolated video tasks, clip records, upload targets, and logs. Production access uses OAuth; local development may still use the explicit dev auth fallback.
@@ -59,15 +68,29 @@ export default async function LoginPage({
 
         <div className="grid gap-5 lg:grid-cols-12">
           <section className="rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(22,21,20,0.84)] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.40)] backdrop-blur-xl lg:col-span-5">
-            <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#dffe00]">Login</p>
+            <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#dffe00]">Email access</p>
             <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl font-black tracking-[-0.04em] text-white">
-              Continue with OAuth
+              Sign in with email
             </h2>
+            <div className="mt-6">
+              <ManualAuthForm mode="login" callbackUrl={callbackUrl || "/dashboard"} />
+            </div>
+            <div className="my-6 flex items-center gap-3">
+              <div className="h-px flex-1 bg-[rgba(223,254,0,0.14)]" />
+              <span className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[#777b65]">
+                OAuth
+              </span>
+              <div className="h-px flex-1 bg-[rgba(223,254,0,0.14)]" />
+            </div>
             <div className="mt-6">
               <AuthButtons providers={getAuthProviders()} callbackUrl={callbackUrl || "/dashboard"} />
             </div>
             <p className="mt-6 text-sm leading-6 text-[#c6c9ab]">
-              New users are created automatically after a successful provider sign-in.
+              New here?{" "}
+              <Link href={getSignupHref(callbackUrl)} className="font-bold text-[#dffe00] transition hover:text-[#39ff14]">
+                Create an account
+              </Link>
+              .
             </p>
           </section>
 
