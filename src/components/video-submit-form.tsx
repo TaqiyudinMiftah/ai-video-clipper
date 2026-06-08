@@ -84,6 +84,40 @@ function getYouTubeThumbnailUrl(value: string) {
   return videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null;
 }
 
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function waitForNextPaint() {
+  return new Promise<void>((resolve) => {
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => resolve());
+    });
+  });
+}
+
+async function preloadImage(src: string) {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return new Promise<boolean>((resolve) => {
+    const image = new Image();
+    const timeout = window.setTimeout(() => resolve(false), 1600);
+
+    image.onload = () => {
+      window.clearTimeout(timeout);
+      resolve(true);
+    };
+    image.onerror = () => {
+      window.clearTimeout(timeout);
+      resolve(false);
+    };
+    image.referrerPolicy = "no-referrer";
+    image.src = src;
+  });
+}
+
 async function uploadToSignedUrl(signedUploadUrl: string, sourceFile: File) {
   const uploadFormData = new FormData();
   uploadFormData.append("cacheControl", "3600");
@@ -183,17 +217,19 @@ export function VideoSubmitForm({ initialConfig }: { initialConfig: ReapClipping
     });
   }, [activeStep, preparedSource]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setState("idle");
-    setMessage("");
-
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const sourceFile = formData.get("sourceFile");
     const hasSourceFile = sourceFile instanceof File && sourceFile.size > 0;
     const sourceUrl = String(formData.get("sourceUrl") ?? "").trim();
     const title = String(formData.get("title") ?? "").trim();
     const platform = String(formData.get("platform") ?? "tiktok");
+
+    setState("submitting");
+    setMessage("Preparing source preview...");
+    await waitForNextPaint();
 
     if (!hasSourceFile && !sourceUrl) {
       setState("error");
@@ -202,6 +238,7 @@ export function VideoSubmitForm({ initialConfig }: { initialConfig: ReapClipping
     }
 
     if (hasSourceFile) {
+      await wait(350);
       setPreparedSource({
         type: "file",
         sourceFile,
@@ -209,18 +246,24 @@ export function VideoSubmitForm({ initialConfig }: { initialConfig: ReapClipping
         platform,
       });
       setActiveStep("configure");
+      setState("idle");
       setMessage("Source selected. Configure Reap options before queueing.");
       return;
     }
 
+    const thumbnailUrl = getYouTubeThumbnailUrl(sourceUrl);
+    const thumbnailReady = thumbnailUrl ? await Promise.race([preloadImage(thumbnailUrl), wait(1600).then(() => false)]) : false;
+    await wait(250);
+
     setPreparedSource({
       type: "url",
       sourceUrl,
-      thumbnailUrl: getYouTubeThumbnailUrl(sourceUrl),
+      thumbnailUrl: thumbnailReady ? thumbnailUrl : null,
       title,
       platform,
     });
     setActiveStep("configure");
+    setState("idle");
     setMessage("Source selected. Configure Reap options before queueing.");
   }
 
@@ -441,8 +484,9 @@ export function VideoSubmitForm({ initialConfig }: { initialConfig: ReapClipping
             <input
               name="sourceUrl"
               type="url"
+              disabled={state === "submitting"}
               placeholder="https://example.com/video.mp4"
-              className="w-full rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#161514] px-4 py-3.5 text-[#e2e2e1] outline-none transition placeholder:text-[#909378] focus:border-[#dffe00] focus:shadow-[0_0_0_4px_rgba(223,254,0,0.10)]"
+              className="w-full rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#161514] px-4 py-3.5 text-[#e2e2e1] outline-none transition placeholder:text-[#909378] focus:border-[#dffe00] focus:shadow-[0_0_0_4px_rgba(223,254,0,0.10)] disabled:cursor-wait disabled:opacity-70"
             />
             <span className="text-xs font-bold text-[#909378]">Use a URL, or choose a file below. If both are set, the file upload wins.</span>
           </label>
@@ -452,8 +496,9 @@ export function VideoSubmitForm({ initialConfig }: { initialConfig: ReapClipping
             <input
               name="sourceFile"
               type="file"
+              disabled={state === "submitting"}
               accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
-              className="w-full rounded-lg border border-dashed border-[rgba(223,254,0,0.15)] bg-[#161514] px-4 py-3.5 text-[#e2e2e1] outline-none transition file:mr-4 file:rounded-lg file:border-0 file:bg-[#d3f000] file:px-4 file:py-2 file:font-[family-name:var(--font-mono)] file:text-xs file:font-bold file:uppercase file:tracking-[0.12em] file:text-[#2c3400] placeholder:text-[#909378] focus:border-[#dffe00] focus:shadow-[0_0_0_4px_rgba(223,254,0,0.10)]"
+              className="w-full rounded-lg border border-dashed border-[rgba(223,254,0,0.15)] bg-[#161514] px-4 py-3.5 text-[#e2e2e1] outline-none transition file:mr-4 file:rounded-lg file:border-0 file:bg-[#d3f000] file:px-4 file:py-2 file:font-[family-name:var(--font-mono)] file:text-xs file:font-bold file:uppercase file:tracking-[0.12em] file:text-[#2c3400] placeholder:text-[#909378] focus:border-[#dffe00] focus:shadow-[0_0_0_4px_rgba(223,254,0,0.10)] disabled:cursor-wait disabled:opacity-70"
             />
             <span className="text-xs font-bold text-[#909378]">Allowed formats: MP4, MOV, WEBM.</span>
           </label>
@@ -463,8 +508,9 @@ export function VideoSubmitForm({ initialConfig }: { initialConfig: ReapClipping
             <input
               name="title"
               type="text"
+              disabled={state === "submitting"}
               placeholder="Podcast episode 17, launch webinar, customer interview..."
-              className="w-full rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#161514] px-4 py-3.5 text-[#e2e2e1] outline-none transition placeholder:text-[#909378] focus:border-[#dffe00] focus:shadow-[0_0_0_4px_rgba(223,254,0,0.10)]"
+              className="w-full rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#161514] px-4 py-3.5 text-[#e2e2e1] outline-none transition placeholder:text-[#909378] focus:border-[#dffe00] focus:shadow-[0_0_0_4px_rgba(223,254,0,0.10)] disabled:cursor-wait disabled:opacity-70"
             />
           </label>
 
@@ -473,7 +519,8 @@ export function VideoSubmitForm({ initialConfig }: { initialConfig: ReapClipping
             <select
               name="platform"
               defaultValue="tiktok"
-              className="w-full rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#161514] px-4 py-3.5 text-[#e2e2e1] outline-none transition placeholder:text-[#909378] focus:border-[#dffe00] focus:shadow-[0_0_0_4px_rgba(223,254,0,0.10)]"
+              disabled={state === "submitting"}
+              className="w-full rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#161514] px-4 py-3.5 text-[#e2e2e1] outline-none transition placeholder:text-[#909378] focus:border-[#dffe00] focus:shadow-[0_0_0_4px_rgba(223,254,0,0.10)] disabled:cursor-wait disabled:opacity-70"
             >
               <option value="tiktok">TikTok only for MVP</option>
             </select>
@@ -484,7 +531,14 @@ export function VideoSubmitForm({ initialConfig }: { initialConfig: ReapClipping
             disabled={state === "submitting"}
             className="inline-flex h-14 w-full items-center justify-center gap-2 rounded-lg bg-[#d3f000] px-5 py-3 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.18em] text-[#2c3400] transition hover:-translate-y-0.5 hover:bg-[#39ff14] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
           >
-            {state === "submitting" ? "Preparing..." : "Create clipping task"}
+            {state === "submitting" ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#2c3400]/30 border-t-[#2c3400]" />
+                Preparing preview...
+              </>
+            ) : (
+              "Create clipping task"
+            )}
           </button>
 
           {message ? (
