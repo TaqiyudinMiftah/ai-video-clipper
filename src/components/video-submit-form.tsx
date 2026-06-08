@@ -11,6 +11,7 @@ type PreparedSource =
   | {
       type: "url";
       sourceUrl: string;
+      thumbnailUrl: string | null;
       title: string;
       platform: string;
     }
@@ -48,6 +49,38 @@ function formatApiError(result: ApiResult, fallback: string) {
   const details = typeof result.details === "string" ? result.details : "";
 
   return [result.error, details].filter(Boolean).join(" ") || fallback;
+}
+
+function getYouTubeVideoId(value: string) {
+  try {
+    const url = new URL(value);
+    const host = url.hostname.replace(/^www\./, "");
+
+    if (host === "youtu.be") {
+      return url.pathname.split("/").filter(Boolean)[0] ?? null;
+    }
+
+    if (host === "youtube.com" || host === "m.youtube.com" || host === "music.youtube.com") {
+      if (url.pathname === "/watch") {
+        return url.searchParams.get("v");
+      }
+
+      const [prefix, id] = url.pathname.split("/").filter(Boolean);
+
+      if (["shorts", "embed", "live"].includes(prefix) && id) {
+        return id;
+      }
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
+function getYouTubeThumbnailUrl(value: string) {
+  const videoId = getYouTubeVideoId(value);
+  return videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : null;
 }
 
 async function uploadToSignedUrl(signedUploadUrl: string, sourceFile: File) {
@@ -104,6 +137,7 @@ export function VideoSubmitForm({ initialConfig }: { initialConfig: ReapClipping
     setPreparedSource({
       type: "url",
       sourceUrl,
+      thumbnailUrl: getYouTubeThumbnailUrl(sourceUrl),
       title,
       platform,
     });
@@ -263,11 +297,15 @@ export function VideoSubmitForm({ initialConfig }: { initialConfig: ReapClipping
       preparedSource.type === "file"
         ? preparedSource.title || preparedSource.sourceFile.name
         : preparedSource.title || preparedSource.sourceUrl;
+    const sourceThumbnailUrl = preparedSource.type === "url" ? preparedSource.thumbnailUrl : null;
+    const sourceMetaLabel = preparedSource.type === "url" && preparedSource.thumbnailUrl ? "YouTube source" : preparedSource.type === "file" ? "Local file" : "URL source";
 
     return (
       <div className="grid gap-5">
         <ReapClippingConfigurator
           sourceLabel={sourceLabel}
+          sourceThumbnailUrl={sourceThumbnailUrl}
+          sourceMetaLabel={sourceMetaLabel}
           initialConfig={initialConfig}
           onStartClipping={createAndStartClipping}
         />

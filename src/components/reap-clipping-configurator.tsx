@@ -19,6 +19,8 @@ type PresetsResponse = {
 type ConfiguratorProps = {
   videoId?: string;
   sourceLabel: string;
+  sourceThumbnailUrl?: string | null;
+  sourceMetaLabel?: string | null;
   initialConfig: ReapClippingConfig;
   onStartClipping?: (config: ReapClippingConfig) => Promise<
     | {
@@ -124,7 +126,14 @@ function PresetCard({
   );
 }
 
-export function ReapClippingConfigurator({ videoId, sourceLabel, initialConfig, onStartClipping }: ConfiguratorProps) {
+export function ReapClippingConfigurator({
+  videoId,
+  sourceLabel,
+  sourceThumbnailUrl,
+  sourceMetaLabel,
+  initialConfig,
+  onStartClipping,
+}: ConfiguratorProps) {
   const router = useRouter();
   const [config, setConfig] = useState<ReapClippingConfig>(initialConfig);
   const [presets, setPresets] = useState<ReapPreset[]>([]);
@@ -266,13 +275,37 @@ export function ReapClippingConfigurator({ videoId, sourceLabel, initialConfig, 
   return (
     <section className="rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(22,21,20,0.84)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.40)] backdrop-blur-xl">
       <div className="flex flex-col gap-4 rounded-xl border border-[rgba(223,254,0,0.12)] bg-[rgba(30,32,32,0.70)] p-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="min-w-0">
-          <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.25em] text-[#dffe00]">
-            Configure source
-          </p>
-          <h2 className="mt-2 truncate font-[family-name:var(--font-display)] text-2xl font-black tracking-[-0.04em] text-white">
-            {sourceLabel}
-          </h2>
+        <div className="grid min-w-0 gap-4 sm:grid-cols-[9rem_1fr] sm:items-center">
+          <div className="relative aspect-video overflow-hidden rounded-lg border border-[rgba(223,254,0,0.16)] bg-[#161514]">
+            {sourceThumbnailUrl ? (
+              <img
+                src={sourceThumbnailUrl}
+                alt=""
+                className="h-full w-full object-cover"
+                referrerPolicy="no-referrer"
+                onError={(event) => {
+                  event.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              <div className="grid h-full place-items-center px-3 text-center font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[#909378]">
+                Source
+              </div>
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.25em] text-[#dffe00]">
+              Configure source
+            </p>
+            <h2 className="mt-2 line-clamp-2 font-[family-name:var(--font-display)] text-2xl font-black tracking-[-0.04em] text-white">
+              {sourceLabel}
+            </h2>
+            {sourceMetaLabel ? (
+              <p className="mt-2 font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[#909378]">
+                {sourceMetaLabel}
+              </p>
+            ) : null}
+          </div>
         </div>
         <button
           type="button"
