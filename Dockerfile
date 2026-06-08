@@ -34,6 +34,7 @@ ENV REAP_BASE_URL=https://public.reap.video/api/v1/automation
 RUN npm run prisma:generate
 RUN npm run build
 RUN npm prune --omit=dev
+RUN test -x node_modules/.bin/tsx
 
 FROM base AS runner
 
