@@ -416,9 +416,9 @@ export function ReapClippingConfigurator({
             onChange={(value) => updateConfig({ exportResolution: Number(value) as ReapClippingConfig["exportResolution"] })}
             options={[
               { value: "720", label: "720" },
-              { value: "1080", label: "1080" },
-              { value: "1440", label: "1440" },
-              { value: "2160", label: "2160" },
+              // { value: "1080", label: "1080" },
+              // { value: "1440", label: "1440" },
+              // { value: "2160", label: "2160" },
             ]}
           />
         </div>
