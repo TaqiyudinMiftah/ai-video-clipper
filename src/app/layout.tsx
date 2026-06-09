@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Be_Vietnam_Pro, Inter, JetBrains_Mono } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const beVietnamPro = Be_Vietnam_Pro({
@@ -35,7 +36,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${beVietnamPro.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        {children}
+        <SpeedInsights />
+      </body>
     </html>
   );
 }
