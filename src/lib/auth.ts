@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { authOptions } from "@/lib/auth-options";
 import { prisma } from "@/lib/prisma";
 
@@ -25,7 +26,7 @@ async function getDevUser() {
   });
 }
 
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async () => {
   const session = await getServerSession(authOptions);
   const sessionUserId = session?.user?.id;
 
@@ -42,7 +43,7 @@ export async function getCurrentUser() {
   }
 
   return null;
-}
+});
 
 export async function requireCurrentUser() {
   const user = await getCurrentUser();

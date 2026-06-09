@@ -4,6 +4,7 @@ import { RetryClipUploadButton, RetryVideoButton } from "@/components/retry-acti
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { requireCurrentUser } from "@/lib/auth";
+import { logPerformanceEvent } from "@/lib/observability/performance";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -16,8 +17,12 @@ function formatDate(value: Date) {
 }
 
 export default async function DashboardPage() {
+  const startedAt = performance.now();
+  const authStartedAt = performance.now();
   const user = await requireCurrentUser();
-  const [totalVideos, totalClips, completedUploads, failedVideos, failedUploads, recentVideos] = await prisma.$transaction([
+  const authDurationMs = performance.now() - authStartedAt;
+  const queryStartedAt = performance.now();
+  const [totalVideos, totalClips, completedUploads, failedVideos, failedUploads, recentVideos] = await Promise.all([
     prisma.video.count({
       where: {
         userId: user.id,
@@ -79,7 +84,17 @@ export default async function DashboardPage() {
       take: 6,
     }),
   ]);
+  const queryDurationMs = performance.now() - queryStartedAt;
+  const totalDurationMs = performance.now() - startedAt;
   const failedTaskCount = failedVideos.length + failedUploads.length;
+
+  logPerformanceEvent("dashboard.render.completed", {
+    authDurationMs: Math.round(authDurationMs),
+    queryDurationMs: Math.round(queryDurationMs),
+    totalDurationMs: Math.round(totalDurationMs),
+    failedTaskCount,
+    recentVideoCount: recentVideos.length,
+  });
 
   return (
     <AppShell
