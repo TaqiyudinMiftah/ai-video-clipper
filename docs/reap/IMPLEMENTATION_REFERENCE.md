@@ -311,8 +311,9 @@ REAP_DEFAULT_CAPTIONS_PRESET=system_beasty  # caption preset ID
 REAP_DEFAULT_ENABLE_EMOJIS=true
 REAP_DEFAULT_ENABLE_HIGHLIGHTS=true
 REAP_DEFAULT_LANGUAGE=en
-REAP_POLL_INTERVAL_MS=10000                 # 10 seconds (fallback polling)
-REAP_POLL_TIMEOUT_MS=900000                  # 15 minutes max wait
+REAP_POLLING_INITIAL_DELAY_MS=300000         # wait 5 minutes for webhook
+REAP_POLL_INTERVAL_MS=60000                  # 60 seconds between fallback checks
+REAP_POLL_TIMEOUT_MS=7200000                 # 2 hour fallback window
 
 # Reap Upload
 REAP_MAX_SOURCE_VIDEO_UPLOAD_MB=500         # max upload size in MB

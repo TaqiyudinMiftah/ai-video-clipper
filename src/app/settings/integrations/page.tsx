@@ -78,7 +78,7 @@ export default async function IntegrationsPage() {
           <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#dffe00]">Active</p>
           <h2 className="mt-4 font-[family-name:var(--font-display)] text-3xl font-black tracking-[-0.04em] text-white">Redis / BullMQ</h2>
           <p className="mt-4 leading-7 text-[#c6c9ab]">
-            Jobs are enqueued in BullMQ and processed by background workers (reap, reap-polling, reap-publish).
+            Jobs are enqueued in BullMQ and processed by background workers for Reap submission, webhook-triggered clip download, polling fallback, and publishing.
           </p>
         </article>
 
@@ -86,8 +86,7 @@ export default async function IntegrationsPage() {
           <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#c6c9ab]">Setup Required</p>
           <h2 className="mt-4 font-[family-name:var(--font-display)] text-3xl font-black tracking-[-0.04em] text-white">Reap Webhook</h2>
           <p className="mt-4 leading-7 text-[#c6c9ab]">
-            Configure Reap to send webhooks to your app so clips are downloaded automatically when processing completes.
-            Without webhooks, clips will only download via the polling worker (slower).
+            Webhooks are the primary completion signal. A delayed polling fallback starts after five minutes only when the webhook has not already queued clip download work.
           </p>
 
           <div className="mt-6 grid gap-4 lg:grid-cols-3">
@@ -119,7 +118,7 @@ export default async function IntegrationsPage() {
                 <li>Reap requires HTTPS endpoint (ngrok provides this automatically)</li>
                 <li>Webhook must respond 200 within 5 seconds (validation) or 10 seconds (live)</li>
                 <li>5 consecutive failures will auto-disable the webhook in Reap</li>
-                <li>Reap does NOT retry webhooks — use polling worker as fallback</li>
+                <li>Reap does NOT retry failed deliveries; delayed polling recovers missed events automatically</li>
                 <li>Free Reap plan: 0 webhooks. Creator plan: 1 webhook. Studio plan: 5 webhooks.</li>
               </ul>
             </div>

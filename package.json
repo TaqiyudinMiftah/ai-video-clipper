@@ -11,6 +11,7 @@
     "test": "node --import tsx --test \"tests/**/*.test.ts\"",
     "worker:reap": "tsx -r dotenv/config workers/reap-worker/index.ts",
     "worker:reap-polling": "tsx -r dotenv/config workers/reap-polling-worker/index.ts",
+    "worker:reap-download": "tsx -r dotenv/config workers/reap-clip-download-worker/index.ts",
     "worker:reap-publish": "tsx -r dotenv/config workers/reap-publish-worker/index.ts",
     "worker:reap-publish-status": "tsx -r dotenv/config workers/reap-publish-status-worker/index.ts",
     "worker:health": "tsx -r dotenv/config scripts/worker-health.ts",

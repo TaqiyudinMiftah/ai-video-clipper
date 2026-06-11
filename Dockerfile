@@ -20,6 +20,7 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 ENV DATABASE_URL=postgresql://postgres:postgres@localhost:5432/ai_video_clipper
+ENV DIRECT_URL=postgresql://postgres:postgres@localhost:5432/ai_video_clipper
 ENV REDIS_URL=redis://localhost:6379
 ENV NEXT_PUBLIC_APP_URL=http://localhost:3000
 ENV NEXTAUTH_SECRET=build_time_placeholder_secret

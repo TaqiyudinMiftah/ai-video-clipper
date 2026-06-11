@@ -2,13 +2,30 @@ import { Queue } from "bullmq";
 import type { JobsOptions } from "bullmq";
 import { prisma } from "@/lib/prisma";
 import { logEvent, serializeError } from "@/lib/observability/logger";
+import { getReapPollingJobId } from "@/lib/queue/reap-job-identity";
 import { createQueueRedisConnection } from "@/lib/queue/redis";
 
 export const REAP_POLLING_QUEUE_NAME = "reap-polling";
 export const REAP_POLLING_JOB_NAME = "reap-poll-project";
-export const REAP_POLLING_MAX_ATTEMPTS = 120;
-export const REAP_POLLING_INTERVAL_MS = 30_000;
 export const DEFAULT_REAP_POLLING_CONCURRENCY = 1;
+
+function getPositiveIntegerEnv(name: string, fallback: number) {
+  const value = Number(process.env[name]);
+  return Number.isInteger(value) && value > 0 ? value : fallback;
+}
+
+export function getReapPollingConfig() {
+  const initialDelayMs = getPositiveIntegerEnv("REAP_POLLING_INITIAL_DELAY_MS", 300_000);
+  const intervalMs = getPositiveIntegerEnv("REAP_POLL_INTERVAL_MS", 60_000);
+  const timeoutMs = getPositiveIntegerEnv("REAP_POLL_TIMEOUT_MS", 7_200_000);
+
+  return {
+    initialDelayMs,
+    intervalMs,
+    timeoutMs,
+    maxAttempts: Math.max(1, Math.ceil(timeoutMs / intervalMs)),
+  };
+}
 
 export type ReapPollingJobData = {
   dbJobId: string;
@@ -21,28 +38,33 @@ type ReapPollingJobInput = {
   userId: string;
   videoId: string;
   reapProjectId: string;
+  initialDelayMs?: number;
 };
 
-const reapPollingJobOptions = {
-  attempts: REAP_POLLING_MAX_ATTEMPTS,
-  backoff: {
-    type: "fixed" as const,
-    delay: REAP_POLLING_INTERVAL_MS,
-  },
-  removeOnComplete: {
-    count: 1000,
-  },
-  removeOnFail: {
-    count: 1000,
-  },
-} satisfies JobsOptions;
+function getReapPollingJobOptions(initialDelayMs: number) {
+  const config = getReapPollingConfig();
+
+  return {
+    attempts: config.maxAttempts,
+    delay: initialDelayMs,
+    backoff: {
+      type: "fixed" as const,
+      delay: config.intervalMs,
+    },
+    removeOnComplete: {
+      count: 1000,
+    },
+    removeOnFail: {
+      count: 1000,
+    },
+  } satisfies JobsOptions;
+}
 
 let reapPollingQueue: Queue<ReapPollingJobData> | null = null;
 
 export function getReapPollingQueue() {
   reapPollingQueue ??= new Queue<ReapPollingJobData>(REAP_POLLING_QUEUE_NAME, {
-    connection: createQueueRedisConnection(),
-    defaultJobOptions: reapPollingJobOptions,
+    connection: createQueueRedisConnection("ai-video-clipper-reap-polling-queue"),
   });
 
   return reapPollingQueue;
@@ -52,16 +74,34 @@ export async function enqueueReapPollingJob({
   userId,
   videoId,
   reapProjectId,
+  initialDelayMs,
 }: ReapPollingJobInput) {
-  const dbJob = await prisma.job.create({
-    data: {
+  const config = getReapPollingConfig();
+  const delayMs = initialDelayMs ?? config.initialDelayMs;
+  const dbJobId = getReapPollingJobId(videoId, reapProjectId);
+  const dbJob = await prisma.job.upsert({
+    where: { id: dbJobId },
+    create: {
+      id: dbJobId,
       userId,
       videoId,
       jobType: "reap_process",
       status: "queued",
-      maxAttempts: REAP_POLLING_MAX_ATTEMPTS,
+      maxAttempts: config.maxAttempts,
     },
+    update: {},
   });
+
+  if (dbJob.status === "completed") {
+    return dbJob;
+  }
+
+  const queue = getReapPollingQueue();
+  const existingQueueJob = await queue.getJob(dbJob.id);
+
+  if (existingQueueJob) {
+    return dbJob;
+  }
 
   await logEvent({
     userId,
@@ -74,7 +114,7 @@ export async function enqueueReapPollingJob({
   });
 
   try {
-    const queueJob = await getReapPollingQueue().add(
+    const queueJob = await queue.add(
       REAP_POLLING_JOB_NAME,
       {
         dbJobId: dbJob.id,
@@ -83,10 +123,19 @@ export async function enqueueReapPollingJob({
         reapProjectId,
       },
       {
-        ...reapPollingJobOptions,
+        ...getReapPollingJobOptions(delayMs),
         jobId: dbJob.id,
       },
     );
+
+    await prisma.job.update({
+      where: { id: dbJob.id },
+      data: {
+        status: "queued",
+        errorMessage: null,
+        completedAt: null,
+      },
+    });
 
     await logEvent({
       userId,
@@ -99,8 +148,10 @@ export async function enqueueReapPollingJob({
         queueName: REAP_POLLING_QUEUE_NAME,
         queueJobId: queueJob.id,
         reapProjectId,
-        pollIntervalMs: REAP_POLLING_INTERVAL_MS,
-        maxAttempts: REAP_POLLING_MAX_ATTEMPTS,
+        initialDelayMs: delayMs,
+        pollIntervalMs: config.intervalMs,
+        maxAttempts: config.maxAttempts,
+        timeoutMs: config.timeoutMs,
       },
     });
 
@@ -133,4 +184,34 @@ export async function enqueueReapPollingJob({
 
     throw error;
   }
+}
+
+export async function cancelReapPollingFallback(videoId: string, reapProjectId: string) {
+  const dbJobId = getReapPollingJobId(videoId, reapProjectId);
+  const queueJob = await getReapPollingQueue().getJob(dbJobId);
+
+  if (!queueJob) {
+    return false;
+  }
+
+  const state = await queueJob.getState();
+
+  if (state !== "delayed" && state !== "waiting" && state !== "waiting-children") {
+    return false;
+  }
+
+  await queueJob.remove();
+  await prisma.job.updateMany({
+    where: {
+      id: dbJobId,
+      status: "queued",
+    },
+    data: {
+      status: "cancelled",
+      completedAt: new Date(),
+      errorMessage: "Polling fallback cancelled after Reap webhook delivery.",
+    },
+  });
+
+  return true;
 }

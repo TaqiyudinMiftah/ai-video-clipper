@@ -130,3 +130,16 @@ test("rejects Reap rate limits above documented production cap", () => {
 
   assert.ok(errors.some((error) => error.name === "REAP_RATE_LIMIT_MAX_REQUESTS"));
 });
+
+test("rejects aggressive Reap polling fallback timing", () => {
+  const errors = errorsFor({
+    ...validEnv,
+    REAP_POLLING_INITIAL_DELAY_MS: "1000",
+    REAP_POLL_INTERVAL_MS: "30000",
+    REAP_POLL_TIMEOUT_MS: "3600000",
+  });
+
+  assert.ok(errors.some((error) => error.name === "REAP_POLLING_INITIAL_DELAY_MS"));
+  assert.ok(errors.some((error) => error.name === "REAP_POLL_INTERVAL_MS"));
+  assert.ok(errors.some((error) => error.name === "REAP_POLL_TIMEOUT_MS"));
+});

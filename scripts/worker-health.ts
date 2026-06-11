@@ -4,6 +4,7 @@ import type { Queue } from "bullmq";
 import { Queue as BullQueue } from "bullmq";
 import { prisma } from "../src/lib/prisma";
 import { REAP_PUBLISH_STATUS_QUEUE_NAME } from "../src/lib/queue/reap-publish-status-queue";
+import { REAP_CLIP_DOWNLOAD_QUEUE_NAME } from "../src/lib/queue/reap-clip-download-queue";
 import { CLIP_UPLOAD_QUEUE_NAME } from "../src/lib/queue/upload-queue";
 import { VIDEO_PROCESSING_QUEUE_NAME } from "../src/lib/queue/video-queue";
 import { REAP_POLLING_QUEUE_NAME } from "../src/lib/queue/reap-polling-queue";
@@ -52,6 +53,7 @@ async function main() {
   const uploadConnection = createHealthRedisConnection("ai-video-clipper-health-upload-queue");
   const pollingConnection = createHealthRedisConnection("ai-video-clipper-health-polling-queue");
   const publishStatusConnection = createHealthRedisConnection("ai-video-clipper-health-publish-status-queue");
+  const downloadConnection = createHealthRedisConnection("ai-video-clipper-health-download-queue");
   const videoQueue = new BullQueue(VIDEO_PROCESSING_QUEUE_NAME, {
     connection: videoConnection,
   });
@@ -64,13 +66,17 @@ async function main() {
   const publishStatusQueue = new BullQueue(REAP_PUBLISH_STATUS_QUEUE_NAME, {
     connection: publishStatusConnection,
   });
+  const downloadQueue = new BullQueue(REAP_CLIP_DOWNLOAD_QUEUE_NAME, {
+    connection: downloadConnection,
+  });
 
   try {
     const redisPing = await withTimeout(redis.ping(), "Redis ping");
-    const [videoProcessing, clipUpload, reapPolling, reapPublishStatus, databaseJobs] = await Promise.all([
+    const [videoProcessing, clipUpload, reapPolling, reapDownload, reapPublishStatus, databaseJobs] = await Promise.all([
       getQueueHealth("video-processing", videoQueue),
       getQueueHealth("clip-upload", uploadQueue),
       getQueueHealth("reap-polling", pollingQueue),
+      getQueueHealth("reap-clip-download", downloadQueue),
       getQueueHealth("reap-publish-status", publishStatusQueue),
       withTimeout(
         prisma.job.groupBy({
@@ -89,7 +95,7 @@ async function main() {
       redis: {
         ping: redisPing,
       },
-      queues: [videoProcessing, clipUpload, reapPolling, reapPublishStatus],
+      queues: [videoProcessing, clipUpload, reapPolling, reapDownload, reapPublishStatus],
       databaseJobs: databaseJobs.map((row) => ({
         jobType: row.jobType,
         status: row.status,
@@ -117,11 +123,13 @@ async function main() {
     uploadQueue.disconnect();
     pollingQueue.disconnect();
     publishStatusQueue.disconnect();
+    downloadQueue.disconnect();
     redis.disconnect();
     videoConnection.disconnect();
     uploadConnection.disconnect();
     pollingConnection.disconnect();
     publishStatusConnection.disconnect();
+    downloadConnection.disconnect();
     await prisma.$disconnect();
     process.exit(process.exitCode ?? 0);
   }

@@ -14,7 +14,10 @@ import {
 } from "../../src/lib/reap";
 import { buildCreateClipsPayload, readReapClippingConfig } from "../../src/lib/reap/clipping-config";
 import { getStorageService } from "../../src/lib/storage";
-import { enqueueReapPollingJob } from "../../src/lib/queue/reap-polling-queue";
+import {
+  enqueueReapPollingJob,
+  getReapPollingConfig,
+} from "../../src/lib/queue/reap-polling-queue";
 
 const MAX_UPLOAD_RETRIES = 3;
 const UPLOAD_RETRY_DELAY_MS = 2_000;
@@ -179,10 +182,15 @@ export async function processReapVideoJob(job: Job<VideoProcessingJobData>) {
 
     await job.updateProgress(50);
 
-    await logger.info("Enqueuing Reap polling job to watch for project completion.", {
+    const pollingConfig = getReapPollingConfig();
+
+    await logger.info("Scheduling delayed Reap polling fallback.", {
       phase: 3,
       videoId,
       reapProjectId,
+      initialDelayMs: pollingConfig.initialDelayMs,
+      intervalMs: pollingConfig.intervalMs,
+      timeoutMs: pollingConfig.timeoutMs,
     });
 
     try {
@@ -195,6 +203,7 @@ export async function processReapVideoJob(job: Job<VideoProcessingJobData>) {
         phase: 3,
         videoId,
         reapProjectId,
+        initialDelayMs: pollingConfig.initialDelayMs,
       });
     } catch (pollingError) {
       await logger.warning("Failed to enqueue Reap polling job. Clips will not auto-download. Use manual poll API or webhook.", {
@@ -205,11 +214,11 @@ export async function processReapVideoJob(job: Job<VideoProcessingJobData>) {
       });
     }
 
-    await logger.info("Reap project submitted. Polling worker will check for completion.", {
+    await logger.info("Reap project submitted. Waiting for webhook; delayed polling remains as fallback.", {
       phase: 3,
       videoId,
       reapProjectId,
-      note: "Webhook or polling worker should handle clip download.",
+      note: "Webhook is primary. Polling starts only after the configured initial delay.",
     });
 
     await prisma.job.update({

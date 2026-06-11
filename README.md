@@ -11,7 +11,7 @@ This repository is through **Phase 8** (all Reap migration complete):
 - Database-backed API routes
 - Dashboard, video ledger, and integration pages
 - Reap API client for clip creation and TikTok publishing
-- BullMQ workers: Reap processing, Reap polling fallback, Reap TikTok publish
+- BullMQ workers: Reap processing, delayed polling fallback, clip download, and TikTok publish
 - Supabase-backed storage abstraction for source videos and clips
 - Webhook receiver for Reap project completion callbacks
 - Structured logging, retry controls, worker health check, and troubleshooting notes
@@ -114,21 +114,27 @@ This repository is through **Phase 8** (all Reap migration complete):
     npm run worker:reap-publish-status
     ```
 
-14. In a fifth terminal, start the Reap polling worker (fallback when webhooks are not available):
+14. In a fifth terminal, start the delayed Reap polling fallback worker:
 
     ```bash
     npm run worker:reap-polling
     ```
 
-15. Open `http://localhost:3000/dashboard`.
+15. In a sixth terminal, start the webhook/polling clip download worker:
 
-16. Check queue and worker health when debugging:
+    ```bash
+    npm run worker:reap-download
+    ```
+
+16. Open `http://localhost:3000/dashboard`.
+
+17. Check queue and worker health when debugging:
 
     ```bash
     npm run worker:health
     ```
 
-17. Before deploying to staging or production, run the static production preflight:
+18. Before deploying to staging or production, run the static production preflight:
 
     ```bash
     npm run production:check
@@ -184,19 +190,20 @@ Reap sends webhooks when projects complete. For production:
 
 5. Set `REAP_WEBHOOK_REQUIRE_TIMESTAMP=true` only when Reap sends timestamped webhook signatures. Keep it `false` otherwise so valid Reap callbacks are not rejected.
 
-6. The webhook handler acknowledges Reap quickly, queues clip download work, and lets the polling worker/store service perform long-running operations.
+6. The webhook handler queues idempotent clip download work. A polling fallback starts only if the webhook has not handled the project within five minutes.
 
-## Polling Fallback (Development)
+## Automatic Polling Fallback
 
-If you don't have a public webhook URL, use the polling worker:
+Run both the polling watcher and clip download worker:
 
 ```bash
 npm run worker:reap-polling
+npm run worker:reap-download
 ```
 
-This worker checks Reap project status every 30 seconds (up to 120 attempts ≈ 1 hour) and downloads clips when complete.
+Webhook delivery is the primary path. The fallback waits 5 minutes, then checks Reap every 60 seconds for up to 2 hours. When either path detects completion, it enqueues the same deterministic clip download job.
 
-You can also trigger manual polling via API:
+You can also perform a one-time diagnostic status check via API:
 
 ```bash
 curl -X POST http://localhost:3000/api/videos/{videoId}/poll \
@@ -212,6 +219,7 @@ npm run prisma:deploy
 npm run prisma:studio
 npm run worker:reap
 npm run worker:reap-polling
+npm run worker:reap-download
 npm run worker:reap-publish
 npm run worker:reap-publish-status
 npm run worker:health
@@ -260,7 +268,8 @@ Reap Publish Worker → Reap API → TikTok
 - Video processing jobs are enqueued in BullMQ using `REDIS_URL`.
 - `npm run worker:reap` starts the worker that uploads source videos to Reap and creates clip projects.
 - `POST /api/reap/webhook` receives Reap project completion callbacks and queues clip download work.
-- `npm run worker:reap-polling` polls Reap for project status when webhooks are unavailable.
+- `npm run worker:reap-polling` starts after a five-minute delay and recovers missed Reap webhooks.
+- `npm run worker:reap-download` downloads and stores completed project clips for both webhook and polling paths.
 - `/videos/:id` shows clip previews and editable title, caption, and hashtag metadata when clip rows exist.
 - `POST /api/clips/:id/generate-caption` uses a safe placeholder caption service. If `OPENAI_API_KEY` is missing, it returns and stores a clear placeholder response instead of calling an external API.
 - `POST /api/clips/:id/upload` validates the clip has a Reap clip ID, creates an `UploadTarget`, and queues a TikTok publish job.
@@ -305,7 +314,7 @@ DATABASE_URL="postgresql://USER:PASSWORD@HOST.pooler.supabase.com:5432/postgres?
 DIRECT_URL="postgresql://USER:PASSWORD@HOST.pooler.supabase.com:5432/postgres?connection_limit=1&pool_timeout=20"
 ```
 
-The production compose starts four worker processes. With `connection_limit=1`, their maximum Prisma allocation is four database connections. Increase this only after checking Supabase connection metrics and accounting for every running app, worker, migration, and deployment instance.
+The production compose starts five worker processes. With `connection_limit=1`, their maximum Prisma allocation is five database connections. Increase this only after checking Supabase connection metrics and accounting for every running app, worker, migration, and deployment instance.
 
 ## Staging Container Deployment
 
@@ -340,7 +349,7 @@ For full notes, see `docs/STAGING_DEPLOYMENT.md`. The staging compose file uses 
 6. Start the web app and workers:
 
    ```bash
-   docker compose -f docker-compose.staging.yml up -d app worker-reap worker-reap-polling worker-reap-publish worker-reap-publish-status
+   docker compose -f docker-compose.staging.yml up -d app worker-reap worker-reap-polling worker-reap-download worker-reap-publish worker-reap-publish-status
    ```
 
 7. Check service status and logs:
@@ -389,7 +398,7 @@ The production compose file uses `.env.production`, builds `ai-video-clipper:pro
 6. Start the app and workers:
 
    ```bash
-   docker compose -f docker-compose.production.example.yml up -d app worker-reap worker-reap-polling worker-reap-publish worker-reap-publish-status
+   docker compose -f docker-compose.production.example.yml up -d app worker-reap worker-reap-polling worker-reap-download worker-reap-publish worker-reap-publish-status
    ```
 
 7. Check service status and worker logs:

@@ -9,8 +9,6 @@ export type ReapConfig = {
   defaultEnableEmojis: boolean;
   defaultEnableHighlights: boolean;
   defaultLanguage: string | null;
-  pollIntervalMs: number;
-  pollTimeoutMs: number;
   maxSourceVideoUploadMb: number;
 };
 
@@ -31,8 +29,6 @@ export function getReapConfig(): ReapConfig {
     defaultEnableEmojis: process.env.REAP_DEFAULT_ENABLE_EMOJIS !== "false",
     defaultEnableHighlights: process.env.REAP_DEFAULT_ENABLE_HIGHLIGHTS !== "false",
     defaultLanguage: process.env.REAP_DEFAULT_LANGUAGE || null,
-    pollIntervalMs: getNumberEnv("REAP_POLL_INTERVAL_MS", 10_000),
-    pollTimeoutMs: getNumberEnv("REAP_POLL_TIMEOUT_MS", 900_000),
     maxSourceVideoUploadMb: getNumberEnv("REAP_MAX_SOURCE_VIDEO_UPLOAD_MB", 500),
   };
 }

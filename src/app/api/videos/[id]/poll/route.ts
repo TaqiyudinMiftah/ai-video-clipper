@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { enqueueReapPollingJob } from "@/lib/queue/reap-polling-queue";
+import { enqueueReapClipDownloadJob } from "@/lib/queue/reap-clip-download-queue";
+import { getProjectStatus } from "@/lib/reap";
+import { classifyReapProjectStatus } from "@/lib/reap/project-status";
 
 export const runtime = "nodejs";
 
@@ -41,22 +43,52 @@ export async function POST(_request: NextRequest, { params }: RouteContext) {
   }
 
   try {
-    const job = await enqueueReapPollingJob({
-      userId: user.id,
-      videoId: video.id,
-      reapProjectId: video.reapProjectId,
-    });
+    const statusResponse = await getProjectStatus(video.reapProjectId);
+    const statusKind = classifyReapProjectStatus(statusResponse.status);
+
+    if (statusKind === "completed") {
+      const job = await enqueueReapClipDownloadJob({
+        userId: user.id,
+        videoId: video.id,
+        reapProjectId: video.reapProjectId,
+      });
+
+      return NextResponse.json({
+        videoId: video.id,
+        reapProjectId: video.reapProjectId,
+        jobId: job.id,
+        status: "download_queued",
+      });
+    }
+
+    if (statusKind === "failed") {
+      const errorMessage = `Reap project ${video.reapProjectId} failed with status: ${statusResponse.status}`;
+
+      await prisma.video.update({
+        where: { id: video.id },
+        data: {
+          status: "failed",
+          errorMessage,
+        },
+      });
+
+      return NextResponse.json({
+        videoId: video.id,
+        reapProjectId: video.reapProjectId,
+        status: statusResponse.status,
+        error: errorMessage,
+      });
+    }
 
     return NextResponse.json({
       videoId: video.id,
       reapProjectId: video.reapProjectId,
-      jobId: job.id,
-      status: "polling_started",
+      status: statusResponse.status,
     });
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Failed to start polling for Reap project.",
+        error: error instanceof Error ? error.message : "Failed to check Reap project status.",
       },
       { status: 503 },
     );

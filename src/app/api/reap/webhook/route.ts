@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { logEvent, serializeError } from "@/lib/observability/logger";
 import { prisma } from "@/lib/prisma";
-import { enqueueReapPollingJob } from "@/lib/queue/reap-polling-queue";
-import type { ReapProjectStatus, ReapWebhookPayload } from "@/lib/reap/types";
+import { enqueueReapClipDownloadJob } from "@/lib/queue/reap-clip-download-queue";
+import { cancelReapPollingFallback } from "@/lib/queue/reap-polling-queue";
+import type { ReapWebhookPayload } from "@/lib/reap/types";
 import { getReapWebhookSecurityConfig, verifyReapWebhookRequest } from "@/lib/reap/webhook-security";
-
-const REAP_COMPLETED_STATUSES: ReapProjectStatus[] = ["completed"];
-const REAP_FAILED_STATUSES: ReapProjectStatus[] = ["invalid", "expired", "failed", "error"];
+import { classifyReapProjectStatus } from "@/lib/reap/project-status";
 
 /**
  * Reap sends webhooks when projects reach terminal states.
@@ -62,9 +61,15 @@ export async function POST(request: Request) {
     return new NextResponse(null, { status: 200 });
   }
 
-  if (REAP_COMPLETED_STATUSES.includes(status)) {
-    await handleCompletedProject(video.id, video.userId, projectId);
-  } else if (REAP_FAILED_STATUSES.includes(status)) {
+  const statusKind = classifyReapProjectStatus(status);
+
+  if (statusKind === "completed") {
+    try {
+      await handleCompletedProject(video.id, video.userId, projectId);
+    } catch {
+      return NextResponse.json({ error: "Unable to enqueue clip download." }, { status: 503 });
+    }
+  } else if (statusKind === "failed") {
     await handleFailedProject(video.id, video.userId, projectId, status);
   } else {
     await logEvent({
@@ -82,28 +87,23 @@ export async function POST(request: Request) {
 
 async function handleCompletedProject(videoId: string, userId: string, reapProjectId: string) {
   try {
-    await prisma.video.update({
-      where: { id: videoId },
-      data: {
-        status: "downloading_from_reap",
-        errorMessage: null,
-      },
-    });
-
-    const job = await enqueueReapPollingJob({
+    const job = await enqueueReapClipDownloadJob({
       userId,
       videoId,
       reapProjectId,
     });
+    const pollingCancelled = await cancelReapPollingFallback(videoId, reapProjectId).catch(
+      () => false,
+    );
 
     await logEvent({
       userId,
       jobId: job.id,
       level: "info",
-      event: "reap.webhook.completed_enqueued",
+      event: "reap.webhook.download_enqueued",
       component: "reap-webhook",
       message: "Reap completion webhook queued clip download work.",
-      metadata: { videoId, reapProjectId },
+      metadata: { videoId, reapProjectId, pollingCancelled },
     });
   } catch (error) {
     const errorMessage =
@@ -111,10 +111,15 @@ async function handleCompletedProject(videoId: string, userId: string, reapProje
         ? error.message
         : "Webhook received, but the clip download job could not be enqueued.";
 
-    await prisma.video.update({
-      where: { id: videoId },
+    await prisma.video.updateMany({
+      where: {
+        id: videoId,
+        status: {
+          in: ["processing_in_reap", "downloading_from_reap"],
+        },
+      },
       data: {
-        status: "failed",
+        status: "processing_in_reap",
         errorMessage,
       },
     });
@@ -127,6 +132,8 @@ async function handleCompletedProject(videoId: string, userId: string, reapProje
       message: errorMessage,
       metadata: { videoId, reapProjectId, error: serializeError(error) },
     });
+
+    throw error;
   }
 }
 

@@ -1,11 +1,11 @@
 # Staging Deployment
 
-This project runs as one Next.js web process plus four BullMQ worker processes. Staging should use dedicated staging services for PostgreSQL, Redis, Supabase Storage, Reap credentials, and OAuth callback URLs.
+This project runs as one Next.js web process plus five BullMQ worker processes. Staging should use dedicated staging services for PostgreSQL, Redis, Supabase Storage, Reap credentials, and OAuth callback URLs.
 
 ## Recommended Staging Topology
 
 - Web app: Docker on a VPS or a platform that can run the included container image.
-- Workers: same image as the web app, running `worker:reap`, `worker:reap-polling`, `worker:reap-publish`, and `worker:reap-publish-status`.
+- Workers: same image as the web app, running `worker:reap`, `worker:reap-polling`, `worker:reap-download`, `worker:reap-publish`, and `worker:reap-publish-status`.
 - Database: managed PostgreSQL staging database.
 - Queue: managed Redis staging instance.
 - Storage: Supabase Storage staging bucket, for example `clips-staging`.
@@ -51,7 +51,7 @@ DATABASE_URL="postgresql://USER:PASSWORD@HOST.pooler.supabase.com:5432/postgres?
 DIRECT_URL="postgresql://USER:PASSWORD@HOST.pooler.supabase.com:5432/postgres?connection_limit=1&pool_timeout=20"
 ```
 
-Four worker containers share the database budget. Keep `connection_limit=1` per worker until Supabase metrics show enough spare capacity.
+Five worker containers share the database budget. Keep `connection_limit=1` per worker until Supabase metrics show enough spare capacity.
 
 If Google OAuth is enabled, add this callback URL in Google Cloud:
 
@@ -92,7 +92,7 @@ docker compose -f docker-compose.staging.yml run --rm migrate
 ## 4. Start Web and Workers
 
 ```bash
-docker compose -f docker-compose.staging.yml up -d app worker-reap worker-reap-polling worker-reap-publish worker-reap-publish-status
+docker compose -f docker-compose.staging.yml up -d app worker-reap worker-reap-polling worker-reap-download worker-reap-publish worker-reap-publish-status
 ```
 
 Check process status:
@@ -137,7 +137,7 @@ After smoke checks pass:
 5. Watch worker logs:
 
    ```bash
-   docker compose -f docker-compose.staging.yml logs -f worker-reap worker-reap-polling
+   docker compose -f docker-compose.staging.yml logs -f worker-reap worker-reap-polling worker-reap-download
    ```
 
 6. Confirm the video reaches `ready_to_upload`.
@@ -148,7 +148,7 @@ After smoke checks pass:
 For container rollback, deploy the previous image tag and restart services:
 
 ```bash
-docker compose -f docker-compose.staging.yml up -d --no-build app worker-reap worker-reap-polling worker-reap-publish worker-reap-publish-status
+docker compose -f docker-compose.staging.yml up -d --no-build app worker-reap worker-reap-polling worker-reap-download worker-reap-publish worker-reap-publish-status
 ```
 
 Database migrations should be treated as forward-only unless a migration-specific rollback is written and tested.

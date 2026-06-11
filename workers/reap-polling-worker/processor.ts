@@ -3,17 +3,13 @@ import { createJobLogger, logEvent, serializeError } from "@/lib/observability/l
 import { createWorkerRedisConnection } from "@/lib/queue/redis";
 import { prisma } from "@/lib/prisma";
 import {
+  getReapPollingConfig,
   REAP_POLLING_QUEUE_NAME,
-  REAP_POLLING_MAX_ATTEMPTS,
   type ReapPollingJobData,
 } from "@/lib/queue/reap-polling-queue";
+import { enqueueReapClipDownloadJob } from "@/lib/queue/reap-clip-download-queue";
 import { getProjectStatus } from "@/lib/reap/api";
-import type { ReapProjectStatus } from "@/lib/reap/types";
-import { storeReapProjectClips } from "@/lib/services/reap-clips";
-
-const COMPLETED_STATUSES: ReapProjectStatus[] = ["completed"];
-const FAILED_STATUSES: ReapProjectStatus[] = ["invalid", "expired", "failed", "error"];
-const IN_PROGRESS_STATUSES: ReapProjectStatus[] = ["queued", "prepped", "draft", "processing", "finalizing"];
+import { classifyReapProjectStatus } from "@/lib/reap/project-status";
 
 export async function processReapPollingJob(job: { data: ReapPollingJobData; id?: string; attemptsMade: number; opts?: { attempts?: number } }) {
   const { dbJobId, userId, videoId, reapProjectId } = job.data;
@@ -39,8 +35,9 @@ export async function processReapPollingJob(job: { data: ReapPollingJobData; id?
 
   const statusResponse = await getProjectStatus(reapProjectId);
   const { status } = statusResponse;
+  const statusKind = classifyReapProjectStatus(status);
 
-  if (IN_PROGRESS_STATUSES.includes(status)) {
+  if (statusKind === "processing") {
     const retryMessage = `Reap project ${reapProjectId} still processing (status: ${status}). Will retry on next poll.`;
 
     await prisma.job.update({
@@ -62,28 +59,33 @@ export async function processReapPollingJob(job: { data: ReapPollingJobData; id?
     throw new Error(retryMessage);
   }
 
-  if (COMPLETED_STATUSES.includes(status)) {
-    const result = await storeReapProjectClips({
+  if (statusKind === "completed") {
+    const downloadJob = await enqueueReapClipDownloadJob({
       userId,
       videoId,
       reapProjectId,
-      jobId: dbJobId,
-      component: "reap-polling",
     });
 
     await prisma.job.update({
       where: { id: dbJobId },
       data: {
-        status: result.status === "completed" ? "completed" : "failed",
-        errorMessage: result.errorMessage ?? null,
+        status: "completed",
+        errorMessage: null,
         completedAt: new Date(),
       },
     });
 
-    return { videoId, reapProjectId, ...result };
+    await logger.info("Reap project completed; clip download job enqueued.", {
+      phase: 4,
+      videoId,
+      reapProjectId,
+      downloadJobId: downloadJob.id,
+    });
+
+    return { videoId, reapProjectId, status: "download_queued", downloadJobId: downloadJob.id };
   }
 
-  if (FAILED_STATUSES.includes(status)) {
+  if (statusKind === "failed") {
     const errorMessage = `Reap project ${reapProjectId} failed with status: ${status}`;
 
     await prisma.video.update({
@@ -109,8 +111,6 @@ export async function processReapPollingJob(job: { data: ReapPollingJobData; id?
 
     return { videoId, reapProjectId, status: "failed" };
   }
-
-  throw new Error(`Unknown Reap project status: ${status}. Will retry.`);
 }
 
 export function startReapPollingWorker(concurrency = 1) {
@@ -133,8 +133,12 @@ export function startReapPollingWorker(concurrency = 1) {
 
   worker.on("failed", async (job, err) => {
     if (!job) return;
-    const willRetry = job.attemptsMade < (job.opts.attempts ?? REAP_POLLING_MAX_ATTEMPTS);
-    const errorMessage = err instanceof Error ? err.message : "Reap polling job failed.";
+    const willRetry = job.attemptsMade < (job.opts.attempts ?? getReapPollingConfig().maxAttempts);
+    const errorMessage = willRetry
+      ? err instanceof Error
+        ? err.message
+        : "Reap polling job failed."
+      : `Reap project ${job.data.reapProjectId} did not reach a terminal state within the polling fallback window.`;
 
     if (!willRetry) {
       await prisma.job.update({
@@ -146,8 +150,11 @@ export function startReapPollingWorker(concurrency = 1) {
         },
       });
 
-      await prisma.video.update({
-        where: { id: job.data.videoId },
+      await prisma.video.updateMany({
+        where: {
+          id: job.data.videoId,
+          status: "processing_in_reap",
+        },
         data: {
           status: "failed",
           errorMessage,

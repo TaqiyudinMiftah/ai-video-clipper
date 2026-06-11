@@ -342,6 +342,36 @@ function validateProductionRateLimit(env: Env, results: ProductionCheckResult[])
   }
 }
 
+function validatePollingFallback(env: Env, results: ProductionCheckResult[]) {
+  const initialDelayMs = Number(env.REAP_POLLING_INITIAL_DELAY_MS ?? "300000");
+  const intervalMs = Number(env.REAP_POLL_INTERVAL_MS ?? "60000");
+  const timeoutMs = Number(env.REAP_POLL_TIMEOUT_MS ?? "7200000");
+
+  if (!Number.isFinite(initialDelayMs) || initialDelayMs < 300_000) {
+    results.push({
+      name: "REAP_POLLING_INITIAL_DELAY_MS",
+      severity: "error",
+      message: "REAP_POLLING_INITIAL_DELAY_MS must be at least 300000 so webhook delivery remains primary.",
+    });
+  }
+
+  if (!Number.isFinite(intervalMs) || intervalMs < 60_000) {
+    results.push({
+      name: "REAP_POLL_INTERVAL_MS",
+      severity: "error",
+      message: "REAP_POLL_INTERVAL_MS must be at least 60000 to protect the Reap API rate limit.",
+    });
+  }
+
+  if (!Number.isFinite(timeoutMs) || timeoutMs < 7_200_000) {
+    results.push({
+      name: "REAP_POLL_TIMEOUT_MS",
+      severity: "error",
+      message: "REAP_POLL_TIMEOUT_MS must be at least 7200000 for the two-hour fallback window.",
+    });
+  }
+}
+
 function validateOAuth(env: Env, results: ProductionCheckResult[]) {
   const google = getProviderPair(env, "AUTH_GOOGLE_ID", "AUTH_GOOGLE_SECRET", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET");
   const github = getProviderPair(env, "AUTH_GITHUB_ID", "AUTH_GITHUB_SECRET", "GITHUB_ID", "GITHUB_SECRET");
@@ -459,12 +489,17 @@ export function validateProductionEnv(env: Env = process.env): ProductionCheckRe
   requireSecret(env, "REAP_API_KEY", results, 16);
   validateWebhook(env, results);
   validateProductionRateLimit(env, results);
+  validatePollingFallback(env, results);
 
   for (const name of [
     "REAP_WORKER_CONCURRENCY",
     "REAP_POLLING_CONCURRENCY",
+    "REAP_CLIP_DOWNLOAD_CONCURRENCY",
     "REAP_PUBLISH_CONCURRENCY",
     "REAP_PUBLISH_STATUS_CONCURRENCY",
+    "REAP_POLLING_INITIAL_DELAY_MS",
+    "REAP_POLL_INTERVAL_MS",
+    "REAP_POLL_TIMEOUT_MS",
   ]) {
     validatePositiveInteger(env, name, results);
   }

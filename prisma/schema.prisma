@@ -48,6 +48,7 @@ enum UploadStatus {
 
 enum JobType {
   reap_process
+  reap_download
   reap_publish
   reap_publish_status
   generate_caption
