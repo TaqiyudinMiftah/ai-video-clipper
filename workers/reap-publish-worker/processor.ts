@@ -4,7 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { enqueueReapPublishStatusJob } from "@/lib/queue/reap-publish-status-queue";
 import { TIKTOK_UPLOAD_MAX_ATTEMPTS } from "@/lib/queue/upload-queue";
 import type { ClipUploadJobData } from "@/lib/queue/upload-queue";
-import { getIntegrations, getPostDetails, publishClip, ReapApiError, type ReapPost } from "@/lib/reap";
+import {
+  getIntegrations,
+  getPostDetails,
+  publishClip,
+  ReapApiError,
+  type ReapPost,
+} from "@/lib/reap";
 import {
   isReapPostPending,
   isTikTokPostCompleted,
@@ -23,7 +29,10 @@ class TerminalReapPublishError extends Error {
 export async function processReapPublishJob(job: Job<ClipUploadJobData>) {
   const { dbJobId, userId, clipId, uploadTargetId, platform } = job.data;
   const attempt = job.attemptsMade + 1;
-  const maxAttempts = typeof job.opts.attempts === "number" ? job.opts.attempts : TIKTOK_UPLOAD_MAX_ATTEMPTS;
+  const maxAttempts =
+    typeof job.opts.attempts === "number"
+      ? job.opts.attempts
+      : TIKTOK_UPLOAD_MAX_ATTEMPTS;
   const logger = createJobLogger({
     component: "reap-publish-worker",
     userId,
@@ -63,11 +72,15 @@ export async function processReapPublishJob(job: Job<ClipUploadJobData>) {
     }
 
     if (!clip.reapClipId) {
-      throw new Error("Clip must have a reapClipId before it can be published via Reap.");
+      throw new Error(
+        "Clip must have a reapClipId before it can be published via Reap.",
+      );
     }
 
     if (!clip.video.reapProjectId) {
-      throw new Error("Video must have a reapProjectId before its clips can be published via Reap.");
+      throw new Error(
+        "Video must have a reapProjectId before its clips can be published via Reap.",
+      );
     }
 
     const uploadTarget = await prisma.uploadTarget.findUnique({
@@ -85,7 +98,7 @@ export async function processReapPublishJob(job: Job<ClipUploadJobData>) {
 
     await prisma.video.update({
       where: { id: clip.videoId },
-      data: { status: "uploading_to_tiktok", errorMessage: null },
+      data: { status: "ready_to_upload", errorMessage: null },
     });
 
     await job.updateProgress(20);
@@ -118,11 +131,14 @@ export async function processReapPublishJob(job: Job<ClipUploadJobData>) {
       let integrationId = uploadTarget.reapIntegrationId;
 
       if (!integrationId) {
-        await logger.info("No integrationId on upload target. Fetching TikTok integrations from Reap.", {
-          phase: 6,
-          clipId,
-          uploadTargetId,
-        });
+        await logger.info(
+          "No integrationId on upload target. Fetching TikTok integrations from Reap.",
+          {
+            phase: 6,
+            clipId,
+            uploadTargetId,
+          },
+        );
 
         const integrationsResponse = await getIntegrations();
         const tiktokIntegration = integrationsResponse.integrations.find(
@@ -199,15 +215,20 @@ export async function processReapPublishJob(job: Job<ClipUploadJobData>) {
         reapPostId: post.id,
       });
 
-      await logger.info("Reap post still processing; status polling job enqueued.", {
-        phase: 6,
-        clipId,
-        uploadTargetId,
-        reapPostId: post.id,
-        postStatus: post.status,
-      });
+      await logger.info(
+        "Reap post still processing; status polling job enqueued.",
+        {
+          phase: 6,
+          clipId,
+          uploadTargetId,
+          reapPostId: post.id,
+          postStatus: post.status,
+        },
+      );
     } else {
-      throw new Error(`Unexpected Reap post status for TikTok publish: ${post.status}.`);
+      throw new Error(
+        `Unexpected Reap post status for TikTok publish: ${post.status}.`,
+      );
     }
 
     await prisma.job.update({
@@ -229,8 +250,12 @@ export async function processReapPublishJob(job: Job<ClipUploadJobData>) {
       status: post.status,
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : "Unknown Reap publish worker error.";
-    const willRetry = !(error instanceof TerminalReapPublishError) && attempt < maxAttempts;
+    const errorMessage =
+      error instanceof Error
+        ? error.message
+        : "Unknown Reap publish worker error.";
+    const willRetry =
+      !(error instanceof TerminalReapPublishError) && attempt < maxAttempts;
 
     await prisma.uploadTarget.update({
       where: { id: uploadTargetId },
@@ -241,20 +266,24 @@ export async function processReapPublishJob(job: Job<ClipUploadJobData>) {
       },
     });
 
-    await prisma.clip.update({
-      where: { id: clipId },
-      data: { status: willRetry ? "ready_to_upload" : "failed" },
-    }).catch(() => {});
+    await prisma.clip
+      .update({
+        where: { id: clipId },
+        data: { status: willRetry ? "ready_to_upload" : "failed" },
+      })
+      .catch(() => {});
 
     const clipRecord = await prisma.clip.findUnique({ where: { id: clipId } });
     if (clipRecord) {
-      await prisma.video.update({
-        where: { id: clipRecord.videoId },
-        data: {
-          status: willRetry ? "ready_to_upload" : "failed",
-          errorMessage,
-        },
-      }).catch(() => {});
+      await prisma.video
+        .update({
+          where: { id: clipRecord.videoId },
+          data: {
+            status: willRetry ? "ready_to_upload" : "failed",
+            errorMessage,
+          },
+        })
+        .catch(() => {});
     }
 
     await prisma.job.update({

@@ -22,7 +22,6 @@ enum VideoStatus {
   storing_clips
   generating_caption
   ready_to_upload
-  uploading_to_tiktok
   completed
   failed
   cancelled
