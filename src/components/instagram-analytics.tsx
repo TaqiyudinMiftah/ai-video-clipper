@@ -1,12 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 
 type AccountInsights = {
   reach?: number;
   impressions?: number;
   profileViews?: number;
   followerCount?: number;
+};
+
+type SnapshotPoint = {
+  date: string;
+  followers: number;
+  avgViews: number;
+  totalViews: number;
+  totalReach: number;
+  totalImpressions: number;
+  totalMediaCount: number;
 };
 
 type PostInsights = {
@@ -32,15 +42,19 @@ type PostInsights = {
 export function InstagramAnalytics() {
   const [accountInsights, setAccountInsights] =
     useState<AccountInsights | null>(null);
+  const [history, setHistory] = useState<SnapshotPoint[]>([]);
   const [posts, setPosts] = useState<PostInsights[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [days, setDays] = useState(14);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [insightsRes, postsRes] = await Promise.all([
+        const [insightsRes, historyRes, postsRes] = await Promise.all([
           fetch("/api/analytics/instagram?days=7"),
+          fetch(`/api/analytics/instagram/history?days=${days}`),
           fetch("/api/analytics/instagram/posts?max=6"),
         ]);
 
@@ -49,14 +63,21 @@ export function InstagramAnalytics() {
           setAccountInsights(insightsData.insights ?? null);
         }
 
+        if (historyRes.ok) {
+          const historyData = await historyRes.json();
+          setHistory(historyData.data ?? []);
+        }
+
         if (postsRes.ok) {
           const postsData = await postsRes.json();
           setPosts(postsData.posts ?? []);
         }
 
-        if (!insightsRes.ok && !postsRes.ok) {
+        if (!insightsRes.ok && !historyRes.ok && !postsRes.ok) {
           const errData = insightsRes.ok
-            ? await postsRes.json()
+            ? historyRes.ok
+              ? await postsRes.json()
+              : await historyRes.json()
             : await insightsRes.json();
           throw new Error(
             (errData as { error?: string }).error ??
@@ -71,7 +92,28 @@ export function InstagramAnalytics() {
     };
 
     fetchData();
-  }, []);
+  }, [days]);
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      const res = await fetch("/api/analytics/instagram/snapshot", {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Snapshot failed");
+      const historyRes = await fetch(
+        `/api/analytics/instagram/history?days=${days}`,
+      );
+      if (historyRes.ok) {
+        const data = await historyRes.json();
+        setHistory(data.data ?? []);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Snapshot failed.");
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const formatNumber = (n: number | undefined | null) => {
     if (n == null) return "-";
@@ -79,6 +121,19 @@ export function InstagramAnalytics() {
     if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
     return String(n);
   };
+
+  const latestFollowers = history[history.length - 1]?.followers ?? null;
+  const firstFollowers = history[0]?.followers ?? null;
+  const followerGrowth =
+    latestFollowers != null && firstFollowers != null
+      ? latestFollowers - firstFollowers
+      : null;
+
+  const avgViewsAll = useMemo(() => {
+    if (!history.length) return null;
+    const last = history[history.length - 1];
+    return last.avgViews;
+  }, [history]);
 
   if (loading) {
     return (
@@ -106,56 +161,119 @@ export function InstagramAnalytics() {
     );
   }
 
+  const chartWidth = 100;
+  const chartHeight = 60;
+  const followersValues = history.map((h) => h.followers);
+  const maxFollowers = Math.max(...followersValues, 1);
+  const minFollowers = Math.min(...followersValues, 0);
+
+  const points = history.map((h, i) => {
+    const x = history.length <= 1 ? 0 : (i / (history.length - 1)) * chartWidth;
+    const y =
+      maxFollowers === minFollowers
+        ? chartHeight / 2
+        : chartHeight -
+          ((h.followers - minFollowers) / (maxFollowers - minFollowers)) *
+            chartHeight;
+    return { x, y };
+  });
+
+  const pathD = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x},${p.y}`)
+    .join(" ");
+
   return (
     <section className="rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(22,21,20,0.84)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.40)] backdrop-blur-xl">
       <div className="mb-4 flex items-center justify-between">
         <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#dffe00]">
           Instagram Analytics
         </p>
-        <span className="text-[10px] font-medium text-[#c6c9ab]">
-          Last 7 days
-        </span>
+        <div className="flex gap-1">
+          {[7, 14, 30].map((d) => (
+            <button
+              key={d}
+              onClick={() => setDays(d)}
+              className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] transition ${
+                days === d
+                  ? "border border-[#dffe00] bg-[rgba(223,254,0,0.10)] text-[#dffe00]"
+                  : "border border-transparent text-[#c6c9ab] hover:text-white"
+              }`}
+            >
+              {d}d
+            </button>
+          ))}
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="ml-1 rounded-md border border-[rgba(223,254,0,0.15)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#dffe00] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {refreshing ? "..." : "Refresh"}
+          </button>
+        </div>
       </div>
 
-      {/* Account-level insights */}
-      {accountInsights && (
-        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg border border-[rgba(223,254,0,0.10)] bg-[rgba(30,32,32,0.70)] p-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#c6c9ab]">
-              Reach
-            </p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-xl font-black tracking-[-0.04em] text-white">
-              {formatNumber(accountInsights.reach)}
-            </p>
-          </div>
-          <div className="rounded-lg border border-[rgba(223,254,0,0.10)] bg-[rgba(30,32,32,0.70)] p-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#c6c9ab]">
-              Impressions
-            </p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-xl font-black tracking-[-0.04em] text-white">
-              {formatNumber(accountInsights.impressions)}
-            </p>
-          </div>
-          <div className="rounded-lg border border-[rgba(223,254,0,0.10)] bg-[rgba(30,32,32,0.70)] p-3">
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#c6c9ab]">
-              Profile Views
-            </p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-xl font-black tracking-[-0.04em] text-white">
-              {formatNumber(accountInsights.profileViews)}
-            </p>
-          </div>
-          <div className="rounded-lg border border-[rgba(223,254,0,0.10)] bg-[rgba(30,32,32,0.70)] p-3">
+      <div className="mb-5">
+        <div className="mb-2 flex items-end justify-between">
+          <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#c6c9ab]">
               Followers
             </p>
-            <p className="mt-1 font-[family-name:var(--font-display)] text-xl font-black tracking-[-0.04em] text-white">
-              {formatNumber(accountInsights.followerCount)}
-            </p>
+            <div className="flex items-baseline gap-2">
+              <p className="font-[family-name:var(--font-display)] text-2xl font-black tracking-[-0.04em] text-white">
+                {formatNumber(latestFollowers)}
+              </p>
+              {followerGrowth != null && (
+                <span
+                  className={`text-[11px] font-bold ${
+                    followerGrowth >= 0 ? "text-[#39ff14]" : "text-[#ffb4ab]"
+                  }`}
+                >
+                  {followerGrowth >= 0 ? "▲" : "▼"}{" "}
+                  {formatNumber(Math.abs(followerGrowth))} in {days} days
+                </span>
+              )}
+            </div>
           </div>
+          {avgViewsAll != null && (
+            <div className="text-right">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#c6c9ab]">
+                Avg Views
+              </p>
+              <p className="font-[family-name:var(--font-display)] text-xl font-black tracking-[-0.04em] text-white">
+                {formatNumber(Math.round(avgViewsAll))}
+              </p>
+            </div>
+          )}
         </div>
-      )}
 
-      {/* Recent posts with insights */}
+        {history.length > 1 ? (
+          <svg
+            viewBox={`0 0 ${chartWidth + 10} ${chartHeight + 10}`}
+            className="h-32 w-full"
+          >
+            <polyline
+              fill="none"
+              stroke="#dffe00"
+              strokeWidth="2"
+              points={`${points.map((p) => `${p.x + 5},${p.y + 5}`).join(" ")}`}
+            />
+            {points.map((p, i) => (
+              <circle
+                key={i}
+                cx={p.x + 5}
+                cy={p.y + 5}
+                r="1.5"
+                fill="#dffe00"
+              />
+            ))}
+          </svg>
+        ) : (
+          <p className="text-xs text-[#c6c9ab]">
+            Collecting data... Refresh again later to see the growth chart.
+          </p>
+        )}
+      </div>
+
       {posts.length > 0 && (
         <div>
           <p className="mb-3 font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.2em] text-[#c6c9ab]">
@@ -214,10 +332,10 @@ export function InstagramAnalytics() {
         </div>
       )}
 
-      {!accountInsights && posts.length === 0 && (
+      {!accountInsights && history.length === 0 && posts.length === 0 && (
         <p className="text-sm text-[#c6c9ab]">
-          No Instagram analytics data available. Posts must have 1,000+
-          followers for insights.
+          No Instagram analytics data available yet. Click Refresh to take a
+          snapshot.
         </p>
       )}
     </section>

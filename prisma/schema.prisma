@@ -81,6 +81,7 @@ model User {
   clips         Clip[]
   uploadTargets UploadTarget[]
   socialAccounts SocialAccount[]
+  accountAnalytics AccountAnalytics[]
   jobs          Job[]
   logs          Log[]
   createdAt     DateTime       @default(now()) @map("created_at")
@@ -90,21 +91,44 @@ model User {
 }
 
 model SocialAccount {
-  id            String   @id @default(uuid()) @db.Uuid
-  userId        String   @map("user_id") @db.Uuid
+  id            String             @id @default(uuid()) @db.Uuid
+  userId        String             @map("user_id") @db.Uuid
   platform      String
-  connectedId   String   @map("connected_id") @db.Text
-  igUserId      String   @map("ig_user_id") @db.Text
-  igUsername    String   @map("ig_username") @db.Text
-  alias         String?  @db.Text
-  isActive      Boolean  @default(true)
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  connectedId   String             @map("connected_id") @db.Text
+  igUserId      String             @map("ig_user_id") @db.Text
+  igUsername    String             @map("ig_username") @db.Text
+  alias         String?            @db.Text
+  isActive      Boolean            @default(true)
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analytics     AccountAnalytics[]
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
 
   @@unique([userId, connectedId])
   @@index([userId])
   @@map("social_accounts")
+}
+
+model AccountAnalytics {
+  id              String        @id @default(uuid()) @db.Uuid
+  socialAccountId String        @map("social_account_id") @db.Uuid
+  userId          String        @map("user_id") @db.Uuid
+  followerCount   Int           @default(0) @map("follower_count")
+  totalReach      BigInt        @default(0) @map("total_reach")
+  totalImpressions BigInt       @default(0) @map("total_impressions")
+  totalViews      BigInt        @default(0) @map("total_views")
+  totalMediaCount Int           @default(0) @map("total_media_count")
+  avgViews        Float         @default(0) @map("avg_views")
+  snapshotDate    DateTime      @map("snapshot_date") @db.Date
+  socialAccount   SocialAccount @relation(fields: [socialAccountId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  @@unique([socialAccountId, snapshotDate])
+  @@index([socialAccountId])
+  @@index([userId])
+  @@index([snapshotDate])
+  @@map("account_analytics")
 }
 
 model Account {
