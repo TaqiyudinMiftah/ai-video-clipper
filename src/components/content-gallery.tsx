@@ -1,7 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { StatusBadge } from "@/components/status-badge";
 
 type PublishedItem = {
@@ -22,30 +21,69 @@ type PublishedItem = {
   } | null;
 };
 
+type ContentResponse = {
+  items: PublishedItem[];
+  count: number;
+  totalCount: number;
+  totalPages: number;
+  page: number;
+  pageSize: number;
+};
+
+const DEFAULT_PAGE_SIZE = 12;
+
 export function ContentGallery() {
-  const router = useRouter();
   const [items, setItems] = useState<PublishedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const fetchContent = useCallback(async (pageNum: number, append: boolean) => {
+    if (append) {
+      setLoadingMore(true);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      const response = await fetch(
+        `/api/dashboard/content?page=${pageNum}&pageSize=${DEFAULT_PAGE_SIZE}`,
+      );
+      const data: ContentResponse = await response.json();
+      if (!response.ok) {
+        throw new Error(
+          (data as unknown as { error?: string }).error ??
+            "Failed to fetch published content.",
+        );
+      }
+      if (append) {
+        setItems((prev) => [...prev, ...(data.items ?? [])]);
+      } else {
+        setItems(data.items ?? []);
+      }
+      setTotalPages(data.totalPages);
+      setTotalCount(data.totalCount);
+      setPage(pageNum);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unexpected error.");
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const fetchContent = async () => {
-      try {
-        const response = await fetch("/api/dashboard/content");
-        const data = await response.json();
-        if (!response.ok) {
-          throw new Error(data.error ?? "Failed to fetch published content.");
-        }
-        setItems(data.items ?? []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unexpected error.");
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchContent(1, false);
+  }, [fetchContent]);
 
-    fetchContent();
-  }, []);
+  const handleLoadMore = () => {
+    if (page < totalPages && !loadingMore) {
+      fetchContent(page + 1, true);
+    }
+  };
 
   const formatDate = (value: string) => {
     if (!value) return "-";
@@ -110,65 +148,83 @@ export function ContentGallery() {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {items.map((item) => (
-            <article
-              key={item.id}
-              className="grid gap-3 rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] p-4 transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.40)]"
-            >
-              {item.clip?.previewUrl ? (
-                <video
-                  src={item.clip.previewUrl}
-                  controls
-                  playsInline
-                  preload="metadata"
-                  className="aspect-[9/16] w-full rounded-md bg-black object-cover"
-                />
-              ) : (
-                <div className="aspect-[9/16] w-full rounded-md bg-[linear-gradient(160deg,#0b0a09,#1e2020)]" />
-              )}
-
-              <div className="grid gap-2">
-                <div className="flex flex-wrap items-center gap-2">
-                  <StatusBadge
-                    status={
-                      item.platform === "tiktok" ? "uploaded" : "uploaded"
-                    }
+        <>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {items.map((item) => (
+              <article
+                key={item.id}
+                className="grid gap-3 rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] p-4 transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.40)]"
+              >
+                {item.clip?.previewUrl ? (
+                  <video
+                    src={item.clip.previewUrl}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    className="aspect-[9/16] w-full rounded-md bg-black object-cover"
                   />
-                  <StatusBadge
-                    status={item.platform === "tiktok" ? "tiktok" : "instagram"}
-                  />
-                </div>
-
-                <div className="min-w-0">
-                  <h3 className="truncate font-[family-name:var(--font-mono)] text-[13px] font-medium leading-[18px] text-white">
-                    {item.clip?.title ??
-                      item.clip?.video?.title ??
-                      "Untitled clip"}
-                  </h3>
-                  <p className="text-xs leading-5 text-[#c6c9ab]">
-                    Published {formatDate(item.publishedAt)}
-                  </p>
-                </div>
-
-                {item.uploadedUrl ? (
-                  <a
-                    href={item.uploadedUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex min-h-0 items-center justify-center rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] px-3 py-2 font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-[0.16em] text-[#dffe00] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)]"
-                  >
-                    Open {getPlatformLabel(item.platform)} post ↗
-                  </a>
                 ) : (
-                  <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#909378]">
-                    No public URL
-                  </span>
+                  <div className="aspect-[9/16] w-full rounded-md bg-[linear-gradient(160deg,#0b0a09,#1e2020)]" />
                 )}
-              </div>
-            </article>
-          ))}
-        </div>
+
+                <div className="grid gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <StatusBadge
+                      status={
+                        item.platform === "tiktok" ? "uploaded" : "uploaded"
+                      }
+                    />
+                    <StatusBadge
+                      status={
+                        item.platform === "tiktok" ? "tiktok" : "instagram"
+                      }
+                    />
+                  </div>
+
+                  <div className="min-w-0">
+                    <h3 className="truncate font-[family-name:var(--font-mono)] text-[13px] font-medium leading-[18px] text-white">
+                      {item.clip?.title ??
+                        item.clip?.video?.title ??
+                        "Untitled clip"}
+                    </h3>
+                    <p className="text-xs leading-5 text-[#c6c9ab]">
+                      Published {formatDate(item.publishedAt)}
+                    </p>
+                  </div>
+
+                  {item.uploadedUrl ? (
+                    <a
+                      href={item.uploadedUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex min-h-0 items-center justify-center rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] px-3 py-2 font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-[0.16em] text-[#dffe00] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)]"
+                    >
+                      Open {getPlatformLabel(item.platform)} post ↗
+                    </a>
+                  ) : (
+                    <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-[#909378]">
+                      No public URL
+                    </span>
+                  )}
+                </div>
+              </article>
+            ))}
+          </div>
+
+          {page < totalPages && (
+            <div className="mt-6 flex justify-center">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] px-6 py-2.5 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#dffe00] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {loadingMore
+                  ? "Loading..."
+                  : `Load more (${totalCount - items.length} remaining)`}
+              </button>
+            </div>
+          )}
+        </>
       )}
     </section>
   );

@@ -7,6 +7,7 @@ import {
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { ContentGallery } from "@/components/content-gallery";
+import { InstagramAnalytics } from "@/components/instagram-analytics";
 import { requireCurrentUser } from "@/lib/auth";
 import { logPerformanceEvent } from "@/lib/observability/performance";
 import { prisma } from "@/lib/prisma";
@@ -285,6 +286,8 @@ export default async function DashboardPage() {
         </div>
 
         <aside className="space-y-5 lg:col-span-4">
+          <InstagramAnalytics />
+
           <section className="rounded-xl border border-[#dffe00] bg-[rgba(22,21,20,0.84)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.40)] backdrop-blur-xl">
             <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#dffe00]">
               Operator note
