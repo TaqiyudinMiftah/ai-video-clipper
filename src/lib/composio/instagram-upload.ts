@@ -31,11 +31,11 @@ export async function uploadInstagramReels(
   }
 
   try {
-    // Step 1: Create media container
+    // Step 1: Create media container via v3.1
     let creationId = "";
 
     const createRes = await fetch(
-      "https://backend.composio.dev/api/v2/tools/INSTAGRAM_POST_IG_USER_MEDIA/execute",
+      "https://backend.composio.dev/api/v3.1/tools/execute/INSTAGRAM_POST_IG_USER_MEDIA",
       {
         method: "POST",
         headers: {
@@ -43,11 +43,14 @@ export async function uploadInstagramReels(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ig_user_id: igUserId,
-          video_url: videoUrl,
-          media_type: "REELS",
-          caption,
-          share_to_feed: shareToFeed,
+          user_id: entityId,
+          arguments: {
+            ig_user_id: igUserId,
+            video_url: videoUrl,
+            media_type: "REELS",
+            caption,
+            share_to_feed: shareToFeed,
+          },
         }),
       },
     );
@@ -70,9 +73,9 @@ export async function uploadInstagramReels(
       };
     }
 
-    // Step 2: Publish the container
+    // Step 2: Publish the container via v3.1
     const publishRes = await fetch(
-      "https://backend.composio.dev/api/v2/tools/INSTAGRAM_POST_IG_USER_MEDIA_PUBLISH/execute",
+      "https://backend.composio.dev/api/v3.1/tools/execute/INSTAGRAM_POST_IG_USER_MEDIA_PUBLISH",
       {
         method: "POST",
         headers: {
@@ -80,9 +83,13 @@ export async function uploadInstagramReels(
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ig_user_id: igUserId,
-          creation_id: creationId,
-          max_wait_seconds: 300,
+          user_id: entityId,
+          arguments: {
+            ig_user_id: igUserId,
+            creation_id: creationId,
+            max_wait_seconds: 300,
+            poll_interval_seconds: 3,
+          },
         }),
       },
     );

@@ -35,7 +35,7 @@ export async function connectInstagram(
 
   try {
     const response = await fetch(
-      "https://backend.composio.dev/api/v3/connected_accounts/link",
+      "https://backend.composio.dev/api/v3.1/connected_accounts/link",
       {
         method: "POST",
         headers: {
@@ -77,7 +77,7 @@ export async function connectInstagram(
     if (connectionStatus === "ACTIVE" && connectedAccountId) {
       try {
         const userInfoRes = await fetch(
-          "https://backend.composio.dev/api/v2/tools/INSTAGRAM_GET_USER_INFO/execute",
+          "https://backend.composio.dev/api/v3.1/tools/execute/INSTAGRAM_GET_USER_INFO",
           {
             method: "POST",
             headers: {

@@ -230,12 +230,43 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
           throw new Error(igResult.error ?? "Instagram upload failed.");
         }
 
+        // Fetch real permalink from Instagram
+        const apiKey = process.env.COMPOSIO_API_KEY;
+        let permalink = `https://instagram.com/reel/${igResult.mediaId}`;
+        if (apiKey && igResult.mediaId) {
+          try {
+            const mediaRes = await fetch(
+              "https://backend.composio.dev/api/v3.1/tools/execute/INSTAGRAM_GET_IG_MEDIA",
+              {
+                method: "POST",
+                headers: {
+                  Authorization: `Bearer ${apiKey}`,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  user_id: entityId,
+                  arguments: {
+                    ig_media_id: igResult.mediaId,
+                    fields: "permalink",
+                  },
+                }),
+              },
+            );
+            if (mediaRes.ok) {
+              const mediaData = await mediaRes.json();
+              permalink = mediaData?.data?.permalink ?? permalink;
+            }
+          } catch {
+            // keep fallback permalink if fetch fails
+          }
+        }
+
         // Success for this account
         await prisma.uploadTarget.update({
           where: { id: target.id },
           data: {
             uploadStatus: "completed",
-            uploadedUrl: `https://instagram.com/reel/${igResult.mediaId}`,
+            uploadedUrl: permalink,
             platformResponse: igResult,
             errorMessage: null,
           },

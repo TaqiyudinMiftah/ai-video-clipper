@@ -280,9 +280,9 @@ export default async function DashboardPage() {
               )}
             </div>
           </section>
-        </div>
 
-        <ContentGallery />
+          <ContentGallery />
+        </div>
 
         <aside className="space-y-5 lg:col-span-4">
           <section className="rounded-xl border border-[#dffe00] bg-[rgba(22,21,20,0.84)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.40)] backdrop-blur-xl">
