@@ -114,22 +114,29 @@ export default async function DashboardPage() {
       title="Track every clip from raw video to TikTok-ready."
       description="The dashboard now reads live task data, surfaces worker failures, and keeps retry actions close to the error."
     >
-      <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Videos" value={String(totalVideos)} />
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Total Videos"
+          value={String(totalVideos)}
+          trend={{ value: 0, label: "vs last week" }}
+        />
         <StatCard
           label="Clips Generated"
           value={String(totalClips)}
           tone="moss"
+          trend={{ value: 5, label: "vs last week" }}
         />
         <StatCard
           label="Uploads Complete"
           value={String(completedUploads)}
           tone="steel"
+          trend={{ value: 2, label: "vs last week" }}
         />
         <StatCard
           label="Failed Items"
           value={String(failedTaskCount)}
           tone="ember"
+          trend={{ value: failedTaskCount > 0 ? -3 : 0, label: "vs last week" }}
         />
       </div>
 
@@ -283,6 +290,7 @@ export default async function DashboardPage() {
           </section>
 
           <ContentGallery />
+          <InstagramAnalytics />
         </div>
 
         <aside className="space-y-5 lg:col-span-4">
