@@ -137,19 +137,19 @@ export function InstagramAnalytics() {
 
   if (loading) {
     return (
-      <section className="rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(22,21,20,0.84)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.40)] backdrop-blur-xl">
-        <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#dffe00]">
+      <section className="rounded-xl border border-[rgba(231,188,75,0.18)] bg-[#032e1a] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+        <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#e7bc4b]">
           Instagram Analytics
         </p>
-        <p className="mt-2 text-sm text-[#c6c9ab]">Loading...</p>
+        <p className="mt-2 text-sm text-[#b8d4c2]">Loading...</p>
       </section>
     );
   }
 
   if (error) {
     return (
-      <section className="rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(22,21,20,0.84)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.40)] backdrop-blur-xl">
-        <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#dffe00]">
+      <section className="rounded-xl border border-[rgba(231,188,75,0.18)] bg-[#032e1a] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+        <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#e7bc4b]">
           Instagram Analytics
         </p>
         <p className="mt-2 text-sm font-bold text-[#ffb4ab]">
@@ -183,9 +183,9 @@ export function InstagramAnalytics() {
     .join(" ");
 
   return (
-    <section className="rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(22,21,20,0.84)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.40)] backdrop-blur-xl">
+    <section className="rounded-xl border border-[rgba(231,188,75,0.18)] bg-[#032e1a] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-xl">
       <div className="mb-4 flex items-center justify-between">
-        <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#dffe00]">
+        <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#e7bc4b]">
           Instagram Analytics
         </p>
         <div className="flex gap-1">
@@ -195,8 +195,8 @@ export function InstagramAnalytics() {
               onClick={() => setDays(d)}
               className={`rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] transition ${
                 days === d
-                  ? "border border-[#dffe00] bg-[rgba(223,254,0,0.10)] text-[#dffe00]"
-                  : "border border-transparent text-[#c6c9ab] hover:text-white"
+                  ? "border border-[#e7bc4b] bg-[rgba(231,188,75,0.10)] text-[#e7bc4b]"
+                  : "border border-transparent text-[#b8d4c2] hover:text-white"
               }`}
             >
               {d}d
@@ -205,7 +205,7 @@ export function InstagramAnalytics() {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="ml-1 rounded-md border border-[rgba(223,254,0,0.15)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#dffe00] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
+            className="ml-1 rounded-md border border-[rgba(231,188,75,0.20)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#e7bc4b] transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {refreshing ? "..." : "Refresh"}
           </button>
@@ -215,7 +215,7 @@ export function InstagramAnalytics() {
       <div className="mb-5">
         <div className="mb-2 flex items-end justify-between">
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#c6c9ab]">
+            <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#b8d4c2]">
               Followers
             </p>
             <div className="flex items-baseline gap-2">
@@ -236,7 +236,7 @@ export function InstagramAnalytics() {
           </div>
           {avgViewsAll != null && (
             <div className="text-right">
-              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#c6c9ab]">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#b8d4c2]">
                 Avg Views
               </p>
               <p className="font-[family-name:var(--font-display)] text-xl font-black tracking-[-0.04em] text-white">
@@ -253,7 +253,7 @@ export function InstagramAnalytics() {
           >
             <polyline
               fill="none"
-              stroke="#dffe00"
+              stroke="#e7bc4b"
               strokeWidth="2"
               points={`${points.map((p) => `${p.x + 5},${p.y + 5}`).join(" ")}`}
             />
@@ -263,12 +263,12 @@ export function InstagramAnalytics() {
                 cx={p.x + 5}
                 cy={p.y + 5}
                 r="1.5"
-                fill="#dffe00"
+                fill="#e7bc4b"
               />
             ))}
           </svg>
         ) : (
-          <p className="text-xs text-[#c6c9ab]">
+          <p className="text-xs text-[#b8d4c2]">
             Collecting data... Refresh again later to see the growth chart.
           </p>
         )}
@@ -276,14 +276,14 @@ export function InstagramAnalytics() {
 
       {posts.length > 0 && (
         <div>
-          <p className="mb-3 font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.2em] text-[#c6c9ab]">
+          <p className="mb-3 font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.2em] text-[#b8d4c2]">
             Recent posts
           </p>
           <div className="space-y-3">
             {posts.map((post) => (
               <div
                 key={post.id}
-                className="flex items-start gap-3 rounded-lg border border-[rgba(223,254,0,0.08)] bg-[rgba(30,32,32,0.70)] p-3"
+                className="flex items-start gap-3 rounded-lg border border-[rgba(231,188,75,0.12)] bg-[rgba(3,46,26,0.70)] p-3"
               >
                 {post.thumbnailUrl || post.mediaUrl ? (
                   <img
@@ -292,14 +292,14 @@ export function InstagramAnalytics() {
                     className="h-14 w-14 flex-shrink-0 rounded-md bg-black object-cover"
                   />
                 ) : (
-                  <div className="h-14 w-14 flex-shrink-0 rounded-md bg-[linear-gradient(160deg,#0b0a09,#1e2020)]" />
+                  <div className="h-14 w-14 flex-shrink-0 rounded-md bg-[linear-gradient(160deg,#022a18,#032e1a)]" />
                 )}
 
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-[13px] font-medium text-white">
                     {post.caption ? post.caption.slice(0, 60) : "Untitled post"}
                   </p>
-                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[#c6c9ab]">
+                  <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-[#b8d4c2]">
                     <span>❤️ {formatNumber(post.likeCount)}</span>
                     {post.insights?.views != null && (
                       <span>▶️ {formatNumber(post.insights.views)}</span>
@@ -321,7 +321,7 @@ export function InstagramAnalytics() {
                     href={post.permalink}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex-shrink-0 rounded-md border border-[rgba(223,254,0,0.15)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#dffe00] transition hover:-translate-y-0.5"
+                    className="flex-shrink-0 rounded-md border border-[rgba(231,188,75,0.20)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#e7bc4b] transition hover:-translate-y-0.5"
                   >
                     View ↗
                   </a>
@@ -333,7 +333,7 @@ export function InstagramAnalytics() {
       )}
 
       {!accountInsights && history.length === 0 && posts.length === 0 && (
-        <p className="text-sm text-[#c6c9ab]">
+        <p className="text-sm text-[#b8d4c2]">
           No Instagram analytics data available yet. Click Refresh to take a
           snapshot.
         </p>

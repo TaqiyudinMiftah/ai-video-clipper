@@ -1,26 +1,26 @@
 const statusStyles: Record<string, string> = {
-  pending: "border-[#909378] bg-[rgba(144,147,120,0.15)] text-[#c6c9ab]",
-  queued: "border-[#909378] bg-[rgba(144,147,120,0.15)] text-[#c6c9ab]",
-  active: "border-[#dffe00] bg-[rgba(223,254,0,0.10)] text-[#dffe00]",
+  pending: "border-[#b8d4c2] bg-[rgba(184,212,194,0.10)] text-[#b8d4c2]",
+  queued: "border-[#b8d4c2] bg-[rgba(184,212,194,0.10)] text-[#b8d4c2]",
+  active: "border-[#e7bc4b] bg-[rgba(231,188,75,0.10)] text-[#e7bc4b]",
   completed: "border-[#39ff14] bg-[rgba(57,255,20,0.10)] text-[#39ff14]",
   failed: "border-[#ffb4ab] bg-[rgba(255,180,171,0.10)] text-[#ffb4ab]",
-  created: "border-[#909378] bg-[rgba(144,147,120,0.15)] text-[#c6c9ab]",
+  created: "border-[#b8d4c2] bg-[rgba(184,212,194,0.10)] text-[#b8d4c2]",
   stored: "border-[#39ff14] bg-[rgba(57,255,20,0.10)] text-[#39ff14]",
-  uploading: "border-[#dffe00] bg-[rgba(223,254,0,0.10)] text-[#dffe00]",
+  uploading: "border-[#e7bc4b] bg-[rgba(231,188,75,0.10)] text-[#e7bc4b]",
   uploaded: "border-[#39ff14] bg-[rgba(57,255,20,0.10)] text-[#39ff14]",
-  cancelled: "border-[#909378] bg-[rgba(144,147,120,0.15)] text-[#c6c9ab]",
-  publishing: "border-[#dffe00] bg-[rgba(223,254,0,0.10)] text-[#dffe00]",
+  cancelled: "border-[#b8d4c2] bg-[rgba(184,212,194,0.10)] text-[#b8d4c2]",
+  publishing: "border-[#e7bc4b] bg-[rgba(231,188,75,0.10)] text-[#e7bc4b]",
   "not queued":
-    "border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] text-[#909378]",
+    "border-[rgba(231,188,75,0.20)] bg-[rgba(3,46,26,0.70)] text-[#b8d4c2]",
   uploading_to_reap:
-    "border-[#dffe00] bg-[rgba(223,254,0,0.10)] text-[#dffe00]",
+    "border-[#e7bc4b] bg-[rgba(231,188,75,0.10)] text-[#e7bc4b]",
   processing_in_reap:
-    "border-[#dffe00] bg-[rgba(223,254,0,0.10)] text-[#dffe00]",
+    "border-[#e7bc4b] bg-[rgba(231,188,75,0.10)] text-[#e7bc4b]",
   downloading_from_reap:
     "border-[#39ff14] bg-[rgba(57,255,20,0.10)] text-[#39ff14]",
   storing_clips: "border-[#39ff14] bg-[rgba(57,255,20,0.10)] text-[#39ff14]",
   generating_caption:
-    "border-[#dffe00] bg-[rgba(223,254,0,0.10)] text-[#dffe00]",
+    "border-[#e7bc4b] bg-[rgba(231,188,75,0.10)] text-[#e7bc4b]",
   ready_to_upload: "border-[#39ff14] bg-[rgba(57,255,20,0.10)] text-[#39ff14]",
 };
 
@@ -89,7 +89,7 @@ export function StatusBadge({ status }: { status: string }) {
       title={tooltip}
       className={`inline-flex items-center rounded-full border px-3 py-1.5 font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.18em] ${
         dynamicStyle ??
-        "border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] text-[#909378]"
+        "border-[rgba(231,188,75,0.20)] bg-[rgba(3,46,26,0.70)] text-[#b8d4c2]"
       }`}
     >
       {displayName}
