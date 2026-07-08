@@ -16,76 +16,24 @@ import {
 type Range = "7d" | "30d" | "90d";
 
 const PLATFORM_META = {
-  instagram: { color: "#e7bc4b" },
-  twitter: { color: "#39ff14" },
-  tiktok: { color: "#38bdf8" },
-  youtube: { color: "#ffb4ab" },
+  instagram: { color: "#e7bc4b", label: "Instagram" },
+  tiktok: { color: "#38bdf8", label: "TikTok" },
 };
 
 const engagementData = [
-  {
-    date: "Jun 1",
-    instagram: 4200,
-    twitter: 2800,
-    tiktok: 8400,
-    youtube: 1900,
-  },
-  {
-    date: "Jun 5",
-    instagram: 5100,
-    twitter: 3100,
-    tiktok: 9200,
-    youtube: 2200,
-  },
-  {
-    date: "Jun 10",
-    instagram: 4700,
-    twitter: 2600,
-    tiktok: 11000,
-    youtube: 2800,
-  },
-  {
-    date: "Jun 15",
-    instagram: 6300,
-    twitter: 4200,
-    tiktok: 13400,
-    youtube: 3100,
-  },
-  {
-    date: "Jun 20",
-    instagram: 5800,
-    twitter: 3800,
-    tiktok: 12100,
-    youtube: 3400,
-  },
-  {
-    date: "Jun 25",
-    instagram: 7200,
-    twitter: 4900,
-    tiktok: 15600,
-    youtube: 4000,
-  },
-  {
-    date: "Jul 1",
-    instagram: 8100,
-    twitter: 5400,
-    tiktok: 18200,
-    youtube: 4600,
-  },
-  {
-    date: "Jul 8",
-    instagram: 9400,
-    twitter: 6100,
-    tiktok: 21500,
-    youtube: 5200,
-  },
+  { date: "Jun 1", instagram: 4200, tiktok: 8400 },
+  { date: "Jun 5", instagram: 5100, tiktok: 9200 },
+  { date: "Jun 10", instagram: 4700, tiktok: 11000 },
+  { date: "Jun 15", instagram: 6300, tiktok: 13400 },
+  { date: "Jun 20", instagram: 5800, tiktok: 12100 },
+  { date: "Jun 25", instagram: 7200, tiktok: 15600 },
+  { date: "Jul 1", instagram: 8100, tiktok: 18200 },
+  { date: "Jul 8", instagram: 9400, tiktok: 21500 },
 ];
 
 const postPerformance = [
   { platform: "Instagram", reach: 84, engagement: 67, saves: 91 },
-  { platform: "X / Twitter", reach: 71, engagement: 82, saves: 44 },
   { platform: "TikTok", reach: 96, engagement: 89, saves: 78 },
-  { platform: "YouTube", reach: 63, engagement: 74, saves: 85 },
 ];
 
 function CustomTooltip({ active, payload, label }: any) {
@@ -109,10 +57,16 @@ function CustomTooltip({ active, payload, label }: any) {
   );
 }
 
-export function DashboardCharts() {
+type DashboardChartsProps = {
+  enabledPlatforms: string[];
+};
+
+export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
   const [activeRange, setActiveRange] = useState<Range>("30d");
   const [activePlatforms, setActivePlatforms] = useState<Set<string>>(
-    new Set(["instagram", "twitter", "tiktok", "youtube"]),
+    new Set(
+      enabledPlatforms.filter((p) => p === "instagram" || p === "tiktok"),
+    ),
   );
 
   function togglePlatform(p: string) {
@@ -170,7 +124,7 @@ export function DashboardCharts() {
                 className="size-2 rounded-full"
                 style={{ background: meta.color }}
               />
-              {key.charAt(0).toUpperCase() + key.slice(1)}
+              {meta.label || key}
             </button>
           ))}
         </div>

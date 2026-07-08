@@ -1,9 +1,5 @@
 import Link from "next/link";
 import { AppShell } from "@/components/app-shell";
-import {
-  RetryClipUploadButton,
-  RetryVideoButton,
-} from "@/components/retry-actions";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { DashboardCharts } from "@/components/dashboard-charts";
@@ -28,6 +24,35 @@ export default async function DashboardPage() {
   const user = await requireCurrentUser();
   const authDurationMs = performance.now() - authStartedAt;
   const queryStartedAt = performance.now();
+
+  const activeSocialAccounts = await prisma.socialAccount.findMany({
+    where: { userId: user.id, isActive: true },
+  });
+
+  const connectedPlatforms = Array.from(
+    new Set(activeSocialAccounts.map((a) => a.platform.toLowerCase())),
+  );
+
+  const analyticsMap = new Map<
+    string,
+    { followerCount: bigint; totalMediaCount: number }
+  >();
+  const analyticsRows = await prisma.accountAnalytics.findMany({
+    where: {
+      userId: user.id,
+      socialAccountId: { in: activeSocialAccounts.map((a) => a.id) },
+    },
+    orderBy: { snapshotDate: "desc" },
+  });
+  for (const row of analyticsRows) {
+    if (!analyticsMap.has(row.socialAccountId)) {
+      analyticsMap.set(row.socialAccountId, {
+        followerCount: row.followerCount,
+        totalMediaCount: Number(row.totalMediaCount),
+      });
+    }
+  }
+
   const [
     totalVideos,
     totalClips,
@@ -35,18 +60,12 @@ export default async function DashboardPage() {
     failedVideos,
     failedUploads,
     recentVideos,
+    recentUploadTargets,
   ] = await prisma.$transaction([
-    prisma.video.count({
-      where: { userId: user.id },
-    }),
-    prisma.clip.count({
-      where: { userId: user.id },
-    }),
+    prisma.video.count({ where: { userId: user.id } }),
+    prisma.clip.count({ where: { userId: user.id } }),
     prisma.uploadTarget.count({
-      where: {
-        userId: user.id,
-        uploadStatus: "completed",
-      },
+      where: { userId: user.id, uploadStatus: "completed" },
     }),
     prisma.video.findMany({
       where: { userId: user.id, status: "failed" },
@@ -54,22 +73,30 @@ export default async function DashboardPage() {
       take: 4,
     }),
     prisma.uploadTarget.findMany({
-      where: { userId: user.id, platform: "tiktok", uploadStatus: "failed" },
-      include: {
-        clip: {
-          include: { video: true },
-        },
+      where: {
+        userId: user.id,
+        uploadStatus: "failed",
+        platform: { in: connectedPlatforms },
       },
-      orderBy: { updatedAt: "desc" },
+      include: { clip: { include: { video: true } } },
+      orderBy: { createdAt: "desc" },
       take: 4,
     }),
     prisma.video.findMany({
       where: { userId: user.id },
-      include: {
-        _count: { select: { clips: true } },
-      },
+      include: { _count: { select: { clips: true } } },
       orderBy: { updatedAt: "desc" },
       take: 6,
+    }),
+    prisma.uploadTarget.findMany({
+      where: {
+        userId: user.id,
+        platform: { in: connectedPlatforms },
+        uploadStatus: "completed",
+      },
+      include: { clip: { include: { video: true } } },
+      orderBy: { createdAt: "desc" },
+      take: 20,
     }),
   ]);
   const queryDurationMs = performance.now() - queryStartedAt;
@@ -97,7 +124,10 @@ export default async function DashboardPage() {
             Overview
           </h1>
           <span className="font-[family-name:var(--font-mono)] text-[11px] text-[#b8d4c2]">
-            July 2026
+            {new Date().toLocaleString("default", {
+              month: "long",
+              year: "numeric",
+            })}
           </span>
         </div>
         <div className="hidden items-center gap-2 sm:flex">
@@ -221,91 +251,41 @@ export default async function DashboardPage() {
           </div>
         </section>
 
-        {/* Instagram Analytics + Charts */}
-        <DashboardCharts />
+        {/* Charts */}
+        <DashboardCharts enabledPlatforms={connectedPlatforms} />
 
-        {/* Recent Posts Table */}
+        {/* Recent Uploads Table */}
         <RecentPostsTable
-          posts={[
-            {
-              id: "1",
-              platform: "tiktok",
-              content: "Cara BERPIKIR KRITIS Biar Nggak Gampang Dibodohi!",
-              time: "3 days ago",
-              views: "12.4K",
-              likes: "842",
-              comments: "64",
-              shares: "22",
-              change: "+18.4%",
-              trend: "up",
-            },
-            {
-              id: "2",
-              platform: "instagram",
-              content: "Behind the scenes: clip workflow update.",
-              time: "5 days ago",
-              views: "8.1K",
-              likes: "621",
-              comments: "41",
-              shares: "17",
-              change: "+5.2%",
-              trend: "up",
-            },
-            {
-              id: "3",
-              platform: "twitter",
-              content: "Quick tip: batch your uploads before peak hours.",
-              time: "1 week ago",
-              views: "4.5K",
-              likes: "290",
-              comments: "33",
-              shares: "58",
-              change: "-2.1%",
-              trend: "down",
-            },
-            {
-              id: "4",
-              platform: "youtube",
-              content: "Full recap: AI video clipper walkthrough.",
-              time: "1 week ago",
-              views: "18.2K",
-              likes: "1.1K",
-              comments: "96",
-              shares: "44",
-              change: "+9.8%",
-              trend: "up",
-            },
-          ]}
+          posts={recentUploadTargets.map((ut) => ({
+            id: ut.id,
+            platform: ut.platform.toLowerCase(),
+            content:
+              (ut as any).clip?.title ||
+              (ut as any).clip?.video?.title ||
+              "Untitled upload",
+            time: formatDate(ut.createdAt),
+            views: "—",
+            likes: "—",
+            comments: "—",
+            shares: "—",
+            change: "—",
+            trend: "up",
+          }))}
         />
 
         {/* Platform Summary Cards */}
         <PlatformSummaryCards
-          items={[
-            {
-              platform: "tiktok",
-              followers: "612K",
-              engagement: "9.2%",
-              posts: 38,
-            },
-            {
-              platform: "instagram",
-              followers: "384K",
-              engagement: "5.8%",
-              posts: 61,
-            },
-            {
-              platform: "twitter",
-              followers: "148K",
-              engagement: "6.1%",
-              posts: 212,
-            },
-            {
-              platform: "youtube",
-              followers: "97K",
-              engagement: "4.4%",
-              posts: 24,
-            },
-          ]}
+          items={activeSocialAccounts.map((account) => {
+            const analytics = analyticsMap.get(account.id);
+            return {
+              platform: account.platform.toLowerCase() as any,
+              followers: analytics
+                ? Number(analytics.followerCount).toLocaleString()
+                : "—",
+              engagement: "—",
+              posts: Number(analytics?.totalMediaCount ?? 0),
+            };
+          })}
         />
 
         {/* Operator Note Section */}
