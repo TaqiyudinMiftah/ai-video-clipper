@@ -27,12 +27,6 @@ const PLATFORM_META: Record<
     bg: "rgba(231,188,75,0.12)",
     label: "Instagram",
   },
-  twitter: {
-    color: "#39ff14",
-    bg: "rgba(57,255,20,0.12)",
-    label: "X / Twitter",
-  },
-  youtube: { color: "#ffb4ab", bg: "rgba(255,180,171,0.12)", label: "YouTube" },
 };
 
 function EyeIcon() {
@@ -127,107 +121,121 @@ export function RecentPostsTable({ posts }: RecentPostsTableProps) {
           View all
         </button>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b border-[rgba(231,188,75,0.18)]">
-              {[
-                "Platform",
-                "Content",
-                "Views",
-                "Likes",
-                "Comments",
-                "Shares",
-                "Change",
-              ].map((h) => (
-                <th
-                  key={h}
-                  className="px-5 py-3 text-left font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.25em] text-[#b8d4c2] whitespace-nowrap"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {posts.map((post, i) => {
-              const meta = PLATFORM_META[post.platform];
-              return (
-                <tr
-                  key={post.id}
-                  className={`border-b border-[rgba(231,188,75,0.12)] last:border-0 transition-colors ${i % 2 === 0 ? "bg-[rgba(3,46,26,0.40)]" : "bg-[rgba(3,46,26,0.20)]"}`}
-                >
-                  <td className="px-5 py-3.5 whitespace-nowrap">
-                    {meta && (
-                      <span
-                        className="font-[family-name:var(--font-mono)] text-[10px] font-bold px-2 py-1 rounded"
-                        style={{ color: meta.color, background: meta.bg }}
-                      >
-                        {meta.label}
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3.5 max-w-[260px]">
-                    <div className="truncate text-white font-medium">
-                      {post.content}
-                    </div>
-                    <div className="font-[family-name:var(--font-mono)] text-[10px] text-[#b8d4c2] mt-0.5">
-                      {post.time}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 font-[family-name:var(--font-mono)] text-white whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="text-[#b8d4c2]">
-                        <EyeIcon />
-                      </span>
-                      {post.views}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 font-[family-name:var(--font-mono)] text-white whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="text-[#b8d4c2]">
-                        <HeartIcon />
-                      </span>
-                      {post.likes}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 font-[family-name:var(--font-mono)] text-white whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="text-[#b8d4c2]">
-                        <MessageCircleIcon />
-                      </span>
-                      {post.comments}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 font-[family-name:var(--font-mono)] text-white whitespace-nowrap">
-                    <span className="inline-flex items-center gap-1">
-                      <span className="text-[#b8d4c2]">
-                        <Share2Icon />
-                      </span>
-                      {post.shares}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5 whitespace-nowrap">
-                    <span
-                      className="font-[family-name:var(--font-mono)] text-[10px] font-bold flex items-center gap-0.5"
-                      style={{
-                        color: post.trend === "up" ? "#39ff14" : "#ffb4ab",
-                      }}
-                    >
-                      {post.trend === "up" ? (
-                        <ChevronUpIcon />
-                      ) : (
-                        <ChevronDownIcon />
+
+      {posts.length === 0 ? (
+        <div className="flex h-[200px] items-center justify-center">
+          <div className="text-center">
+            <p className="font-[family-name:var(--font-display)] font-black tracking-[-0.04em] text-white">
+              No uploads yet.
+            </p>
+            <p className="mt-1 font-[family-name:var(--font-mono)] text-[11px] text-[#b8d4c2]">
+              Completed uploads will appear here.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-[rgba(231,188,75,0.18)]">
+                {[
+                  "Platform",
+                  "Content",
+                  "Views",
+                  "Likes",
+                  "Comments",
+                  "Shares",
+                  "Change",
+                ].map((h) => (
+                  <th
+                    key={h}
+                    className="px-5 py-3 text-left font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.25em] text-[#b8d4c2] whitespace-nowrap"
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {posts.map((post, i) => {
+                const meta = PLATFORM_META[post.platform];
+                return (
+                  <tr
+                    key={post.id}
+                    className={`border-b border-[rgba(231,188,75,0.12)] last:border-0 transition-colors ${i % 2 === 0 ? "bg-[rgba(3,46,26,0.40)]" : "bg-[rgba(3,46,26,0.20)]"}`}
+                  >
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      {meta && (
+                        <span
+                          className="font-[family-name:var(--font-mono)] text-[10px] font-bold px-2 py-1 rounded"
+                          style={{ color: meta.color, background: meta.bg }}
+                        >
+                          {meta.label}
+                        </span>
                       )}
-                      {post.change}
-                    </span>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+                    </td>
+                    <td className="px-5 py-3.5 max-w-[260px]">
+                      <div className="truncate text-white font-medium">
+                        {post.content}
+                      </div>
+                      <div className="font-[family-name:var(--font-mono)] text-[10px] text-[#b8d4c2] mt-0.5">
+                        {post.time}
+                      </div>
+                    </td>
+                    <td className="px-5 py-3.5 font-[family-name:var(--font-mono)] text-white whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1">
+                        <span className="text-[#b8d4c2]">
+                          <EyeIcon />
+                        </span>
+                        {post.views}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 font-[family-name:var(--font-mono)] text-white whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1">
+                        <span className="text-[#b8d4c2]">
+                          <HeartIcon />
+                        </span>
+                        {post.likes}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 font-[family-name:var(--font-mono)] text-white whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1">
+                        <span className="text-[#b8d4c2]">
+                          <MessageCircleIcon />
+                        </span>
+                        {post.comments}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 font-[family-name:var(--font-mono)] text-white whitespace-nowrap">
+                      <span className="inline-flex items-center gap-1">
+                        <span className="text-[#b8d4c2]">
+                          <Share2Icon />
+                        </span>
+                        {post.shares}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <span
+                        className="font-[family-name:var(--font-mono)] text-[10px] font-bold flex items-center gap-0.5"
+                        style={{
+                          color: post.trend === "up" ? "#39ff14" : "#ffb4ab",
+                        }}
+                      >
+                        {post.trend === "up" ? (
+                          <ChevronUpIcon />
+                        ) : (
+                          <ChevronDownIcon />
+                        )}
+                        {post.change}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

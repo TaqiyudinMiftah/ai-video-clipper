@@ -18,6 +18,19 @@ type PlatformSummaryCardsProps = {
 };
 
 export function PlatformSummaryCards({ items }: PlatformSummaryCardsProps) {
+  if (items.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-[rgba(231,188,75,0.18)] bg-[rgba(3,46,26,0.70)] p-6 text-center">
+        <p className="font-[family-name:var(--font-display)] font-black tracking-[-0.04em] text-white">
+          No platforms connected yet.
+        </p>
+        <p className="mt-1 font-[family-name:var(--font-mono)] text-[11px] text-[#b8d4c2]">
+          Integrate TikTok or Instagram to see your account summary.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {items.map(({ platform, followers, engagement, posts }) => {

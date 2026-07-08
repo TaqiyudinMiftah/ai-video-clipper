@@ -15,26 +15,10 @@ import {
 
 type Range = "7d" | "30d" | "90d";
 
-const PLATFORM_META = {
+const PLATFORM_META: Record<string, { color: string; label: string }> = {
   instagram: { color: "#e7bc4b", label: "Instagram" },
   tiktok: { color: "#38bdf8", label: "TikTok" },
 };
-
-const engagementData = [
-  { date: "Jun 1", instagram: 4200, tiktok: 8400 },
-  { date: "Jun 5", instagram: 5100, tiktok: 9200 },
-  { date: "Jun 10", instagram: 4700, tiktok: 11000 },
-  { date: "Jun 15", instagram: 6300, tiktok: 13400 },
-  { date: "Jun 20", instagram: 5800, tiktok: 12100 },
-  { date: "Jun 25", instagram: 7200, tiktok: 15600 },
-  { date: "Jul 1", instagram: 8100, tiktok: 18200 },
-  { date: "Jul 8", instagram: 9400, tiktok: 21500 },
-];
-
-const postPerformance = [
-  { platform: "Instagram", reach: 84, engagement: 67, saves: 91 },
-  { platform: "TikTok", reach: 96, engagement: 89, saves: 78 },
-];
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
@@ -81,6 +65,8 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
     });
   }
 
+  const hasData = activePlatforms.size > 0 && enabledPlatforms.length > 0;
+
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
       {/* Engagement trend */}
@@ -112,81 +98,124 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 mb-4 flex-wrap">
-          {Object.entries(PLATFORM_META).map(([key, meta]) => (
-            <button
-              key={key}
-              onClick={() => togglePlatform(key)}
-              className="flex items-center gap-1.5 font-[family-name:var(--font-mono)] text-[11px] transition-opacity"
-              style={{ opacity: activePlatforms.has(key) ? 1 : 0.3 }}
-            >
-              <span
-                className="size-2 rounded-full"
-                style={{ background: meta.color }}
-              />
-              {meta.label || key}
-            </button>
-          ))}
-        </div>
-
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={engagementData}>
-            <defs>
+        {!hasData ? (
+          <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-[rgba(231,188,75,0.18)] bg-[rgba(3,46,26,0.70)]">
+            <div className="text-center">
+              <p className="font-[family-name:var(--font-display)] font-black tracking-[-0.04em] text-white">
+                No analytics data yet.
+              </p>
+              <p className="mt-1 font-[family-name:var(--font-mono)] text-[11px] text-[#b8d4c2]">
+                Connect TikTok or Instagram to see engagement trends.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center gap-4 mb-4 flex-wrap">
               {Object.entries(PLATFORM_META).map(([key, meta]) => (
-                <linearGradient
+                <button
                   key={key}
-                  id={`grad-${key}`}
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
+                  onClick={() => togglePlatform(key)}
+                  className="flex items-center gap-1.5 font-[family-name:var(--font-mono)] text-[11px] transition-opacity"
+                  style={{ opacity: activePlatforms.has(key) ? 1 : 0.3 }}
                 >
-                  <stop offset="5%" stopColor={meta.color} stopOpacity={0.25} />
-                  <stop offset="95%" stopColor={meta.color} stopOpacity={0} />
-                </linearGradient>
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ background: meta.color }}
+                  />
+                  {meta.label}
+                </button>
               ))}
-            </defs>
-            <CartesianGrid
-              strokeDasharray="3 3"
-              stroke="rgba(255,255,255,0.05)"
-            />
-            <XAxis
-              dataKey="date"
-              tick={{
-                fontSize: 10,
-                fill: "#b8d4c2",
-                fontFamily: "var(--font-mono)",
-              }}
-              tickLine={false}
-              axisLine={false}
-            />
-            <YAxis
-              tick={{
-                fontSize: 10,
-                fill: "#b8d4c2",
-                fontFamily: "var(--font-mono)",
-              }}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(v: number) =>
-                v >= 1000 ? `${v / 1000}K` : `${v}`
-              }
-            />
-            <Tooltip content={<CustomTooltip />} />
-            {Object.entries(PLATFORM_META).map(([key, meta]) =>
-              activePlatforms.has(key) ? (
-                <Area
-                  key={key}
-                  type="monotone"
-                  dataKey={key}
-                  stroke={meta.color}
-                  strokeWidth={1.5}
-                  fill={`url(#grad-${key})`}
+            </div>
+
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart
+                data={[
+                  ...(enabledPlatforms.includes("instagram")
+                    ? [{ date: "Jun 1", instagram: 4200, tiktok: 0 }]
+                    : []),
+                  ...(enabledPlatforms.includes("tiktok")
+                    ? [{ date: "Jun 1", tiktok: 8400 }]
+                    : []),
+                ].map((d, i, arr) => {
+                  // Merge all data points per date
+                  const merged: any = { date: "" };
+                  for (const entry of arr) {
+                    merged.date = entry.date;
+                    if (entry.instagram !== undefined)
+                      merged.instagram = entry.instagram;
+                    if (entry.tiktok !== undefined)
+                      merged.tiktok = entry.tiktok;
+                  }
+                  return merged;
+                })}
+              >
+                <defs>
+                  {Object.entries(PLATFORM_META).map(([key, meta]) => (
+                    <linearGradient
+                      key={key}
+                      id={`grad-${key}`}
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
+                      <stop
+                        offset="5%"
+                        stopColor={meta.color}
+                        stopOpacity={0.25}
+                      />
+                      <stop
+                        offset="95%"
+                        stopColor={meta.color}
+                        stopOpacity={0}
+                      />
+                    </linearGradient>
+                  ))}
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgba(255,255,255,0.05)"
                 />
-              ) : null,
-            )}
-          </AreaChart>
-        </ResponsiveContainer>
+                <XAxis
+                  dataKey="date"
+                  tick={{
+                    fontSize: 10,
+                    fill: "#b8d4c2",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  tick={{
+                    fontSize: 10,
+                    fill: "#b8d4c2",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v: number) =>
+                    v >= 1000 ? `${v / 1000}K` : `${v}`
+                  }
+                />
+                <Tooltip content={<CustomTooltip />} />
+                {Object.entries(PLATFORM_META).map(([key, meta]) =>
+                  activePlatforms.has(key) ? (
+                    <Area
+                      key={key}
+                      type="monotone"
+                      dataKey={key}
+                      stroke={meta.color}
+                      strokeWidth={1.5}
+                      fill={`url(#grad-${key})`}
+                    />
+                  ) : null,
+                )}
+              </AreaChart>
+            </ResponsiveContainer>
+          </>
+        )}
       </div>
 
       {/* Platform score bars */}
@@ -199,74 +228,115 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
             reach · eng · saves
           </p>
         </div>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={postPerformance} layout="vertical" barGap={2}>
-            <CartesianGrid
-              horizontal={false}
-              strokeDasharray="3 3"
-              stroke="rgba(255,255,255,0.05)"
-            />
-            <XAxis
-              type="number"
-              tick={{
-                fontSize: 10,
-                fill: "#b8d4c2",
-                fontFamily: "var(--font-mono)",
-              }}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(v: number) => `${v}%`}
-            />
-            <YAxis
-              type="category"
-              dataKey="platform"
-              tick={{
-                fontSize: 10,
-                fill: "#b8d4c2",
-                fontFamily: "var(--font-mono)",
-              }}
-              tickLine={false}
-              axisLine={false}
-              width={68}
-            />
-            <Tooltip content={<CustomTooltip />} />
-            <Bar
-              dataKey="reach"
-              fill="#e7bc4b"
-              radius={[0, 2, 2, 0]}
-              maxBarSize={6}
-            />
-            <Bar
-              dataKey="engagement"
-              fill="#39ff14"
-              radius={[0, 2, 2, 0]}
-              maxBarSize={6}
-            />
-            <Bar
-              dataKey="saves"
-              fill="#38bdf8"
-              radius={[0, 2, 2, 0]}
-              maxBarSize={6}
-            />
-          </BarChart>
-        </ResponsiveContainer>
-        <div className="flex items-center gap-4 mt-3">
-          {[
-            { label: "Reach", color: "#e7bc4b" },
-            { label: "Eng.", color: "#39ff14" },
-            { label: "Saves", color: "#38bdf8" },
-          ].map(({ label, color }) => (
-            <div key={label} className="flex items-center gap-1.5">
-              <span
-                className="size-2 rounded-full"
-                style={{ background: color }}
-              />
-              <span className="font-[family-name:var(--font-mono)] text-[11px] text-[#b8d4c2]">
-                {label}
-              </span>
+
+        {!hasData ? (
+          <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-[rgba(231,188,75,0.18)] bg-[rgba(3,46,26,0.70)]">
+            <div className="text-center">
+              <p className="font-[family-name:var(--font-display)] font-black tracking-[-0.04em] text-white">
+                No data yet.
+              </p>
+              <p className="mt-1 font-[family-name:var(--font-mono)] text-[11px] text-[#b8d4c2]">
+                Connect a platform to see your score.
+              </p>
             </div>
-          ))}
-        </div>
+          </div>
+        ) : (
+          <>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart
+                data={[
+                  ...(enabledPlatforms.includes("instagram")
+                    ? [
+                        {
+                          platform: "Instagram",
+                          reach: 84,
+                          engagement: 67,
+                          saves: 91,
+                        },
+                      ]
+                    : []),
+                  ...(enabledPlatforms.includes("tiktok")
+                    ? [
+                        {
+                          platform: "TikTok",
+                          reach: 96,
+                          engagement: 89,
+                          saves: 78,
+                        },
+                      ]
+                    : []),
+                ]}
+                layout="vertical"
+                barGap={2}
+              >
+                <CartesianGrid
+                  horizontal={false}
+                  strokeDasharray="3 3"
+                  stroke="rgba(255,255,255,0.05)"
+                />
+                <XAxis
+                  type="number"
+                  tick={{
+                    fontSize: 10,
+                    fill: "#b8d4c2",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(v: number) => `${v}%`}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="platform"
+                  tick={{
+                    fontSize: 10,
+                    fill: "#b8d4c2",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                  tickLine={false}
+                  axisLine={false}
+                  width={68}
+                />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar
+                  dataKey="reach"
+                  fill="#e7bc4b"
+                  radius={[0, 2, 2, 0]}
+                  maxBarSize={6}
+                />
+                <Bar
+                  dataKey="engagement"
+                  fill="#39ff14"
+                  radius={[0, 2, 2, 0]}
+                  maxBarSize={6}
+                />
+                <Bar
+                  dataKey="saves"
+                  fill="#38bdf8"
+                  radius={[0, 2, 2, 0]}
+                  maxBarSize={6}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+            <div className="flex items-center gap-4 mt-3">
+              {[
+                { label: "Reach", color: "#e7bc4b" },
+                { label: "Eng.", color: "#39ff14" },
+                { label: "Saves", color: "#38bdf8" },
+              ].map(({ label, color }) => (
+                <div key={label} className="flex items-center gap-1.5">
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ background: color }}
+                  />
+                  <span className="font-[family-name:var(--font-mono)] text-[11px] text-[#b8d4c2]">
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
