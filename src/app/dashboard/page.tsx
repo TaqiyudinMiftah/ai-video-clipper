@@ -3,7 +3,7 @@ import { AppShell } from "@/components/app-shell";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
 import { DashboardCharts } from "@/components/dashboard-charts";
-import { PlatformSummaryCards } from "@/components/platform-summary-cards";
+import { TopAccountsTable } from "@/components/platform-summary-cards";
 import { RecentPostsTable } from "@/components/recent-posts-table";
 import { requireCurrentUser } from "@/lib/auth";
 import { logPerformanceEvent } from "@/lib/observability/performance";
@@ -27,31 +27,13 @@ export default async function DashboardPage() {
 
   const activeSocialAccounts = await prisma.socialAccount.findMany({
     where: { userId: user.id, isActive: true },
+    orderBy: { createdAt: "desc" },
+    take: 5,
   });
 
   const connectedPlatforms = Array.from(
     new Set(activeSocialAccounts.map((a) => a.platform.toLowerCase())),
   );
-
-  const analyticsMap = new Map<
-    string,
-    { followerCount: bigint; totalMediaCount: number }
-  >();
-  const analyticsRows = await prisma.accountAnalytics.findMany({
-    where: {
-      userId: user.id,
-      socialAccountId: { in: activeSocialAccounts.map((a) => a.id) },
-    },
-    orderBy: { snapshotDate: "desc" },
-  });
-  for (const row of analyticsRows) {
-    if (!analyticsMap.has(row.socialAccountId)) {
-      analyticsMap.set(row.socialAccountId, {
-        followerCount: row.followerCount,
-        totalMediaCount: Number(row.totalMediaCount),
-      });
-    }
-  }
 
   const [
     totalVideos,
@@ -117,8 +99,8 @@ export default async function DashboardPage() {
       title="Track every clip from raw video to TikTok-ready."
       description="The dashboard now reads live task data, surfaces worker failures, and keeps retry actions close to the error."
     >
-      {/* Sub-header matching Figma */}
-      <div className="mb-5 flex items-center justify-between rounded-lg border border-[rgba(231,188,75,0.18)] bg-[#032e1a] px-5 py-3">
+      {/* Sub-header */}
+      <div className="mb-5 flex items-center justify-between rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] px-5 py-3">
         <div className="flex items-center gap-4">
           <h1 className="font-[family-name:var(--font-display)] text-sm font-bold text-white">
             Overview
@@ -158,7 +140,7 @@ export default async function DashboardPage() {
               type="search"
               placeholder="Search posts..."
               suppressHydrationWarning
-              className="h-8 w-44 rounded-md border border-[rgba(231,188,75,0.18)] bg-[#032e1a] pl-7 pr-3 font-[family-name:var(--font-mono)] text-xs text-white outline-none transition placeholder:text-[#b8d4c2] focus:border-[rgba(231,188,75,0.35)]"
+              className="h-8 w-44 rounded-md border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] pl-7 pr-3 font-[family-name:var(--font-mono)] text-xs text-white outline-none transition placeholder:text-[#b8d4c2] focus:border-[rgba(232,192,0,0.35)]"
             />
           </div>
         </div>
@@ -196,7 +178,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Recent task pulse */}
-        <section className="rounded-lg border border-[rgba(231,188,75,0.18)] bg-[#032e1a] p-5">
+        <section className="rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] p-5">
           <div className="flex items-start justify-between mb-5">
             <div>
               <h2 className="font-[family-name:var(--font-display)] text-base font-black tracking-[-0.04em] text-white">
@@ -208,7 +190,7 @@ export default async function DashboardPage() {
             </div>
             <Link
               href="/videos/new"
-              className="inline-flex min-h-0 items-center justify-center gap-2 rounded-md bg-[#e7bc4b] px-4 py-2 font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[#022a18] transition hover:-translate-y-0.5 hover:bg-[#f5d78a]"
+              className="inline-flex min-h-0 items-center justify-center gap-2 rounded-md bg-[#e8c000] px-4 py-2 font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[#1b1d26] transition hover:-translate-y-0.5 hover:bg-[#f5d78a]"
             >
               Add video
             </Link>
@@ -220,7 +202,7 @@ export default async function DashboardPage() {
                 <Link
                   key={video.id}
                   href={`/videos/${video.id}`}
-                  className="flex items-center justify-between gap-4 rounded-lg border border-[rgba(231,188,75,0.18)] bg-[rgba(3,46,26,0.70)] px-4 py-3.5 transition hover:-translate-y-0.5 hover:border-[rgba(231,188,75,0.40)]"
+                  className="flex items-center justify-between gap-4 rounded-lg border border-[rgba(232,192,0,0.18)] bg-[rgba(27,29,38,0.70)] px-4 py-3.5 transition hover:-translate-y-0.5 hover:border-[rgba(232,192,0,0.40)]"
                 >
                   <div className="min-w-0">
                     <div className="truncate font-[family-name:var(--font-display)] text-sm font-bold text-white leading-snug">
@@ -239,7 +221,7 @@ export default async function DashboardPage() {
                 </Link>
               ))
             ) : (
-              <div className="rounded-lg border border-dashed border-[rgba(231,188,75,0.18)] bg-[rgba(3,46,26,0.70)] p-6 text-center">
+              <div className="rounded-lg border border-dashed border-[rgba(232,192,0,0.18)] bg-[rgba(27,29,38,0.70)] p-6 text-center">
                 <p className="font-[family-name:var(--font-display)] font-black tracking-[-0.04em] text-white">
                   No video tasks yet.
                 </p>
@@ -273,25 +255,28 @@ export default async function DashboardPage() {
           }))}
         />
 
-        {/* Platform Summary Cards */}
-        <PlatformSummaryCards
-          items={activeSocialAccounts.map((account) => {
-            const analytics = analyticsMap.get(account.id);
-            return {
-              platform: account.platform.toLowerCase() as any,
-              followers: analytics
-                ? Number(analytics.followerCount).toLocaleString()
+        {/* Top Accounts by Growth */}
+        <TopAccountsTable
+          items={activeSocialAccounts.map((account) => ({
+            id: account.id,
+            platform: account.platform.toLowerCase() as "tiktok" | "instagram",
+            username: account.igUsername,
+            followers: account.followerCount.toLocaleString(),
+            engagement:
+              account.engagementRate !== null &&
+              account.engagementRate !== undefined
+                ? `${Number(account.engagementRate).toFixed(1)}%`
                 : "—",
-              engagement: "—",
-              posts: Number(analytics?.totalMediaCount ?? 0),
-            };
-          })}
+            posts: account.mediaCount,
+            growth: "—",
+            positive: true,
+          }))}
         />
 
         {/* Operator Note Section */}
         <section className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <div className="lg:col-span-2 rounded-lg border border-[rgba(231,188,75,0.18)] bg-[#032e1a] p-5">
-            <p className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase leading-4 tracking-[0.25em] text-[#e7bc4b]">
+          <div className="lg:col-span-2 rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] p-5">
+            <p className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase leading-4 tracking-[0.25em] text-[#e8c000]">
               Operator note
             </p>
             <h2 className="mt-4 font-[family-name:var(--font-display)] text-2xl font-black tracking-[-0.04em] text-white">
@@ -299,22 +284,22 @@ export default async function DashboardPage() {
             </h2>
             <p className="mt-4 leading-7 text-[#b8d4c2]">
               Use{" "}
-              <code className="rounded bg-[rgba(231,188,75,0.10)] px-1 py-0.5 font-[family-name:var(--font-mono)] text-[11px] text-[#e7bc4b]">
+              <code className="rounded bg-[rgba(232,192,0,0.10)] px-1 py-0.5 font-[family-name:var(--font-mono)] text-[11px] text-[#e8c000]">
                 npm run worker:health
               </code>{" "}
               to confirm Redis queues and database job counts before retrying
               failed work.
             </p>
           </div>
-          <div className="lg:col-span-1 rounded-lg border border-[rgba(231,188,75,0.18)] bg-[#032e1a] p-5">
+          <div className="lg:col-span-1 rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] p-5">
             <div className="flex items-center justify-between">
               <p className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase leading-4 tracking-[0.25em] text-[#b8d4c2]">
                 System telemetry
               </p>
               <div className="flex gap-1">
-                <span className="size-1.5 rounded-full bg-[#e7bc4b]" />
-                <span className="size-1.5 rounded-full bg-[#e7bc4b]" />
-                <span className="size-1.5 rounded-full bg-[#e7bc4b]" />
+                <span className="size-1.5 rounded-full bg-[#e8c000]" />
+                <span className="size-1.5 rounded-full bg-[#e8c000]" />
+                <span className="size-1.5 rounded-full bg-[#e8c000]" />
               </div>
             </div>
             <div className="mt-6 space-y-4">
@@ -322,23 +307,23 @@ export default async function DashboardPage() {
                 <span className="font-[family-name:var(--font-mono)] text-[11px] font-medium uppercase text-[#b8d4c2]">
                   Reap limit
                 </span>
-                <span className="font-[family-name:var(--font-mono)] text-[11px] font-medium text-[#e7bc4b]">
+                <span className="font-[family-name:var(--font-mono)] text-[11px] font-medium text-[#e8c000]">
                   10 req/min
                 </span>
               </div>
               <div className="h-1 overflow-hidden rounded-full bg-white/5">
-                <div className="h-full w-[64%] bg-[#e7bc4b]" />
+                <div className="h-full w-[64%] bg-[#e8c000]" />
               </div>
               <div className="flex items-end justify-between">
                 <span className="font-[family-name:var(--font-mono)] text-[11px] font-medium uppercase text-[#b8d4c2]">
                   Queue engine
                 </span>
-                <span className="font-[family-name:var(--font-mono)] text-[11px] font-medium text-[#39ff14]">
+                <span className="font-[family-name:var(--font-mono)] text-[11px] font-medium text-[#22c55e]">
                   BullMQ
                 </span>
               </div>
               <div className="h-1 overflow-hidden rounded-full bg-white/5">
-                <div className="h-full w-[42%] bg-[#39ff14]" />
+                <div className="h-full w-[42%] bg-[#22c55e]" />
               </div>
             </div>
           </div>

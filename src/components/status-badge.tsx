@@ -1,27 +1,26 @@
 const statusStyles: Record<string, string> = {
   pending: "border-[#b8d4c2] bg-[rgba(184,212,194,0.10)] text-[#b8d4c2]",
   queued: "border-[#b8d4c2] bg-[rgba(184,212,194,0.10)] text-[#b8d4c2]",
-  active: "border-[#e7bc4b] bg-[rgba(231,188,75,0.10)] text-[#e7bc4b]",
-  completed: "border-[#39ff14] bg-[rgba(57,255,20,0.10)] text-[#39ff14]",
+  active: "border-[#e8c000] bg-[rgba(232,192,0,0.10)] text-[#e8c000]",
+  completed: "border-[#22c55e] bg-[rgba(34,197,94,0.10)] text-[#22c55e]",
   failed: "border-[#ffb4ab] bg-[rgba(255,180,171,0.10)] text-[#ffb4ab]",
   created: "border-[#b8d4c2] bg-[rgba(184,212,194,0.10)] text-[#b8d4c2]",
-  stored: "border-[#39ff14] bg-[rgba(57,255,20,0.10)] text-[#39ff14]",
-  uploading: "border-[#e7bc4b] bg-[rgba(231,188,75,0.10)] text-[#e7bc4b]",
-  uploaded: "border-[#39ff14] bg-[rgba(57,255,20,0.10)] text-[#39ff14]",
+  stored: "border-[#22c55e] bg-[rgba(34,197,94,0.10)] text-[#22c55e]",
+  uploading: "border-[#e8c000] bg-[rgba(232,192,0,0.10)] text-[#e8c000]",
+  uploaded: "border-[#22c55e] bg-[rgba(34,197,94,0.10)] text-[#22c55e]",
   cancelled: "border-[#b8d4c2] bg-[rgba(184,212,194,0.10)] text-[#b8d4c2]",
-  publishing: "border-[#e7bc4b] bg-[rgba(231,188,75,0.10)] text-[#e7bc4b]",
-  "not queued":
-    "border-[rgba(231,188,75,0.20)] bg-[rgba(3,46,26,0.70)] text-[#b8d4c2]",
+  publishing: "border-[#e8c000] bg-[rgba(232,192,0,0.10)] text-[#e8c000]",
+  "not queued": "border-[rgba(232,192,0,0.20)] bg-[#1b1d26] text-[#b8d4c2]",
   uploading_to_reap:
-    "border-[#e7bc4b] bg-[rgba(231,188,75,0.10)] text-[#e7bc4b]",
+    "border-[#e8c000] bg-[rgba(232,192,0,0.10)] text-[#e8c000]",
   processing_in_reap:
-    "border-[#e7bc4b] bg-[rgba(231,188,75,0.10)] text-[#e7bc4b]",
+    "border-[#e8c000] bg-[rgba(232,192,0,0.10)] text-[#e8c000]",
   downloading_from_reap:
-    "border-[#39ff14] bg-[rgba(57,255,20,0.10)] text-[#39ff14]",
-  storing_clips: "border-[#39ff14] bg-[rgba(57,255,20,0.10)] text-[#39ff14]",
+    "border-[#22c55e] bg-[rgba(34,197,94,0.10)] text-[#22c55e]",
+  storing_clips: "border-[#22c55e] bg-[rgba(34,197,94,0.10)] text-[#22c55e]",
   generating_caption:
-    "border-[#e7bc4b] bg-[rgba(231,188,75,0.10)] text-[#e7bc4b]",
-  ready_to_upload: "border-[#39ff14] bg-[rgba(57,255,20,0.10)] text-[#39ff14]",
+    "border-[#e8c000] bg-[rgba(232,192,0,0.10)] text-[#e8c000]",
+  ready_to_upload: "border-[#22c55e] bg-[rgba(34,197,94,0.10)] text-[#22c55e]",
 };
 
 const displayNames: Record<string, string> = {
@@ -89,7 +88,7 @@ export function StatusBadge({ status }: { status: string }) {
       title={tooltip}
       className={`inline-flex items-center rounded-full border px-3 py-1.5 font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.18em] ${
         dynamicStyle ??
-        "border-[rgba(231,188,75,0.20)] bg-[rgba(3,46,26,0.70)] text-[#b8d4c2]"
+        "border-[rgba(232,192,0,0.20)] bg-[#1b1d26] text-[#b8d4c2]"
       }`}
     >
       {displayName}

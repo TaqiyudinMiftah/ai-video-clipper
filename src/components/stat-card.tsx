@@ -10,21 +10,21 @@ export function StatCard({
   trend?: { value: number; label?: string };
 }) {
   const toneBorder = {
-    neutral: "border-[rgba(231,188,75,0.18)]",
+    neutral: "border-[rgba(232,192,0,0.18)]",
     ember: "border-[#ffb4ab]/40",
-    moss: "border-[#39ff14]/40",
-    steel: "border-[#e7bc4b]/40",
+    moss: "border-[#22c55e]/40",
+    steel: "border-[#e8c000]/40",
   }[tone];
 
   const toneBg = {
-    neutral: "bg-[#032e1a]",
+    neutral: "bg-[#1b1d26]",
     ember: "bg-[rgba(255,180,171,0.08)]",
-    moss: "bg-[rgba(57,255,20,0.06)]",
-    steel: "bg-[rgba(231,188,75,0.08)]",
+    moss: "bg-[rgba(34,197,94,0.06)]",
+    steel: "bg-[rgba(232,192,0,0.08)]",
   }[tone];
 
   const trendColor =
-    trend && trend.value >= 0 ? "text-[#39ff14]" : "text-[#ffb4ab]";
+    trend && trend.value >= 0 ? "text-[#22c55e]" : "text-[#ffb4ab]";
   const trendArrow = trend && trend.value >= 0 ? "▲" : "▼";
 
   return (

@@ -91,18 +91,21 @@ model User {
 }
 
 model SocialAccount {
-  id            String             @id @default(uuid()) @db.Uuid
-  userId        String             @map("user_id") @db.Uuid
-  platform      String
-  connectedId   String             @map("connected_id") @db.Text
-  igUserId      String             @map("ig_user_id") @db.Text
-  igUsername    String             @map("ig_username") @db.Text
-  alias         String?            @db.Text
-  isActive      Boolean            @default(true)
-  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  analytics     AccountAnalytics[]
-  createdAt     DateTime           @default(now()) @map("created_at")
-  updatedAt     DateTime           @updatedAt @map("updated_at")
+  id              String    @id @default(uuid()) @db.Uuid
+  userId          String    @map("user_id") @db.Uuid
+  platform        String
+  connectedId     String    @map("connected_id") @db.Text
+  igUserId        String    @map("ig_user_id") @db.Text
+  igUsername      String    @map("ig_username") @db.Text
+  alias           String?   @db.Text
+  isActive        Boolean   @default(true)
+  followerCount   Int       @default(0) @map("follower_count")
+  mediaCount      Int       @default(0) @map("media_count")
+  engagementRate  Float?    @map("engagement_rate")
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analytics       AccountAnalytics[]
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   @@unique([userId, connectedId])
   @@index([userId])
@@ -246,7 +249,7 @@ model UploadTarget {
   platformResponse  Json?        @map("platform_response")
   reapIntegrationId String?      @map("reap_integration_id")
   reapPostId        String?      @map("reap_post_id")
-  scheduledAt       DateTime?   @map("scheduled_at")
+  scheduledAt       DateTime?    @map("scheduled_at")
   errorMessage      String?      @map("error_message")
   retryCount        Int          @default(0) @map("retry_count")
   clip              Clip         @relation(fields: [clipId], references: [id], onDelete: Cascade)

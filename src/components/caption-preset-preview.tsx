@@ -1,4 +1,6 @@
-import type { CSSProperties } from "react";
+"use client";
+
+import { useEffect, useRef } from "react";
 import { getCaptionPreviewTheme } from "@/lib/reap/caption-preset-preview";
 
 type CaptionPresetPreviewProps = {
@@ -26,18 +28,22 @@ export function CaptionPresetPreview({
 
   const theme = getCaptionPreviewTheme(presetId, presetName);
   const words = theme.sentenceCase ? SENTENCE_WORDS : UPPERCASE_WORDS;
-  const style = {
-    "--caption-primary": theme.primary,
-    "--caption-accent": theme.accent,
-    "--caption-surface": theme.surface,
-  } as CSSProperties;
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    el.style.setProperty("--caption-primary", theme.primary);
+    el.style.setProperty("--caption-accent", theme.accent);
+    el.style.setProperty("--caption-surface", theme.surface);
+  }, [theme.primary, theme.accent, theme.surface]);
 
   return (
     <div
+      ref={rootRef}
       className={`caption-preset-preview caption-preset-preview--${theme.variant}${
         theme.italic ? " caption-preset-preview--italic" : ""
       }`}
-      style={style}
       aria-hidden="true"
     >
       <span className="caption-preset-preview__copy">

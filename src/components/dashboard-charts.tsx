@@ -15,21 +15,29 @@ import {
 
 type Range = "7d" | "30d" | "90d";
 
-const PLATFORM_META: Record<string, { color: string; label: string }> = {
-  instagram: { color: "#e7bc4b", label: "Instagram" },
-  tiktok: { color: "#38bdf8", label: "TikTok" },
+const PLATFORM_META: Record<
+  string,
+  { color: string; dotClass: string; label: string }
+> = {
+  instagram: { color: "#e8c000", dotClass: "bg-[#e8c000]", label: "Instagram" },
+  tiktok: { color: "#22c55e", dotClass: "bg-[#22c55e]", label: "TikTok" },
 };
 
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-lg border border-[rgba(231,188,75,0.25)] bg-[#032e1a] p-3 text-xs font-mono shadow-xl">
+    <div className="rounded-lg border border-[rgba(232,192,0,0.25)] bg-[#1b1d26] p-3 text-xs font-mono shadow-xl">
       <p className="text-[#b8d4c2] mb-2">{label}</p>
       {payload.map((p: any) => (
         <div key={p.name} className="flex items-center gap-2 mb-1">
           <span
-            className="size-2 rounded-full"
-            style={{ background: p.color }}
+            className={`size-2 rounded-full ${
+              p.name === "instagram"
+                ? "bg-[#e8c000]"
+                : p.name === "tiktok"
+                  ? "bg-[#22c55e]"
+                  : "bg-white"
+            }`}
           />
           <span className="text-[#b8d4c2] capitalize">{p.name}</span>
           <span className="ml-auto pl-4 text-white">
@@ -70,7 +78,7 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
       {/* Engagement trend */}
-      <div className="lg:col-span-2 rounded-lg border border-[rgba(231,188,75,0.18)] bg-[#032e1a] p-4">
+      <div className="lg:col-span-2 rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] p-4">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="font-[family-name:var(--font-display)] text-sm font-black tracking-[-0.04em] text-white">
@@ -85,12 +93,11 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
               <button
                 key={r}
                 onClick={() => setActiveRange(r)}
-                className="font-[family-name:var(--font-mono)] text-xs px-2.5 py-1 rounded transition-colors"
-                style={{
-                  background:
-                    activeRange === r ? "rgba(231,188,75,0.15)" : "transparent",
-                  color: activeRange === r ? "#e7bc4b" : "#b8d4c2",
-                }}
+                className={`font-[family-name:var(--font-mono)] text-xs px-2.5 py-1 rounded transition-colors ${
+                  activeRange === r
+                    ? "bg-[rgba(232,192,0,0.15)] text-[#e8c000]"
+                    : "bg-transparent text-[#b8d4c2]"
+                }`}
               >
                 {r}
               </button>
@@ -99,7 +106,7 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
         </div>
 
         {!hasData ? (
-          <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-[rgba(231,188,75,0.18)] bg-[rgba(3,46,26,0.70)]">
+          <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-[rgba(232,192,0,0.18)] bg-[rgba(27,29,38,0.70)]">
             <div className="text-center">
               <p className="font-[family-name:var(--font-display)] font-black tracking-[-0.04em] text-white">
                 No analytics data yet.
@@ -116,12 +123,12 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
                 <button
                   key={key}
                   onClick={() => togglePlatform(key)}
-                  className="flex items-center gap-1.5 font-[family-name:var(--font-mono)] text-[11px] transition-opacity"
-                  style={{ opacity: activePlatforms.has(key) ? 1 : 0.3 }}
+                  className={`flex items-center gap-1.5 font-[family-name:var(--font-mono)] text-[11px] transition-opacity ${
+                    activePlatforms.has(key) ? "opacity-100" : "opacity-30"
+                  }`}
                 >
                   <span
-                    className="size-2 rounded-full"
-                    style={{ background: meta.color }}
+                    className={`size-2 rounded-full ${meta.dotClass}`}
                   />
                   {meta.label}
                 </button>
@@ -138,7 +145,6 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
                     ? [{ date: "Jun 1", tiktok: 8400 }]
                     : []),
                 ].map((d, i, arr) => {
-                  // Merge all data points per date
                   const merged: any = { date: "" };
                   for (const entry of arr) {
                     merged.date = entry.date;
@@ -219,7 +225,7 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
       </div>
 
       {/* Platform score bars */}
-      <div className="rounded-lg border border-[rgba(231,188,75,0.18)] bg-[#032e1a] p-4">
+      <div className="rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] p-4">
         <div className="mb-4">
           <h2 className="font-[family-name:var(--font-display)] text-sm font-black tracking-[-0.04em] text-white">
             Platform Score
@@ -230,7 +236,7 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
         </div>
 
         {!hasData ? (
-          <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-[rgba(231,188,75,0.18)] bg-[rgba(3,46,26,0.70)]">
+          <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-[rgba(232,192,0,0.18)] bg-[rgba(27,29,38,0.70)]">
             <div className="text-center">
               <p className="font-[family-name:var(--font-display)] font-black tracking-[-0.04em] text-white">
                 No data yet.
@@ -300,13 +306,13 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
                 <Tooltip content={<CustomTooltip />} />
                 <Bar
                   dataKey="reach"
-                  fill="#e7bc4b"
+                  fill="#e8c000"
                   radius={[0, 2, 2, 0]}
                   maxBarSize={6}
                 />
                 <Bar
                   dataKey="engagement"
-                  fill="#39ff14"
+                  fill="#22c55e"
                   radius={[0, 2, 2, 0]}
                   maxBarSize={6}
                 />
@@ -320,14 +326,13 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
             </ResponsiveContainer>
             <div className="flex items-center gap-4 mt-3">
               {[
-                { label: "Reach", color: "#e7bc4b" },
-                { label: "Eng.", color: "#39ff14" },
-                { label: "Saves", color: "#38bdf8" },
-              ].map(({ label, color }) => (
+                { label: "Reach", color: "#e8c000", dotClass: "bg-[#e8c000]" },
+                { label: "Eng.", color: "#22c55e", dotClass: "bg-[#22c55e]" },
+                { label: "Saves", color: "#38bdf8", dotClass: "bg-[#38bdf8]" },
+              ].map(({ label, dotClass }) => (
                 <div key={label} className="flex items-center gap-1.5">
                   <span
-                    className="size-2 rounded-full"
-                    style={{ background: color }}
+                    className={`size-2 rounded-full ${dotClass}`}
                   />
                   <span className="font-[family-name:var(--font-mono)] text-[11px] text-[#b8d4c2]">
                     {label}

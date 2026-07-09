@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import {
   getVideoProcessingProgress,
   isVideoProcessingStatus,
@@ -24,6 +24,12 @@ export function VideoProcessingProgress({
   const [isRefreshing, startRefresh] = useTransition();
   const [mediaFailed, setMediaFailed] = useState(false);
   const progress = getVideoProcessingProgress(status);
+  const barRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!progress || !barRef.current) return;
+    barRef.current.style.width = `${progress.progress}%`;
+  }, [progress?.progress]);
 
   useEffect(() => {
     if (!isVideoProcessingStatus(status)) {
@@ -135,8 +141,8 @@ export function VideoProcessingProgress({
           className="relative h-3 overflow-hidden rounded-full border border-[rgba(223,254,0,0.18)] bg-[#0c0f0e]"
         >
           <div
-            className="relative h-full overflow-hidden rounded-full bg-[#dffe00] transition-[width] duration-700 ease-out"
-            style={{ width: `${progress.progress}%` }}
+            ref={barRef}
+            className="relative h-full w-0 overflow-hidden rounded-full bg-[#dffe00] transition-[width] duration-700 ease-out"
           >
             <span className="absolute inset-0 animate-[pulse_1.8s_ease-in-out_infinite] bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.55),transparent)]" />
           </div>

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { SignOutButton } from "@/components/auth-actions";
 import { requireCurrentUser } from "@/lib/auth";
 
-const navItems = [
+const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/videos/new", label: "Add Video" },
   { href: "/videos", label: "Videos" },
@@ -57,24 +57,6 @@ function UserIcon() {
   );
 }
 
-function renderTitle(title: string) {
-  const highlight = "TikTok-ready";
-
-  if (!title.includes(highlight)) {
-    return title;
-  }
-
-  const [before, after] = title.split(highlight);
-
-  return (
-    <>
-      {before}
-      <span className="italic text-[#e7bc4b]">{highlight}</span>
-      {after}
-    </>
-  );
-}
-
 export async function AppShell({
   children,
   eyebrow,
@@ -92,25 +74,26 @@ export async function AppShell({
   const userLabel = user.name || user.email;
 
   return (
-    <div className="min-h-screen text-white">
-      <header className="fixed left-0 right-0 top-0 z-50 border-b border-[rgba(231,188,75,0.18)] bg-[#032e1a]/85 shadow-sm shadow-black/40 backdrop-blur-xl">
+    <div className="min-h-screen bg-[#1b1d26] text-white">
+      <header className="fixed left-0 right-0 top-0 z-50 border-b border-[rgba(232,192,0,0.18)] bg-[#1b1d26]/85 shadow-sm shadow-black/40 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-[1200px] items-center justify-between px-5 md:px-8">
           <div className="flex min-w-0 items-center gap-6">
             <Link
               href="/dashboard"
-              className="shrink-0 font-[family-name:var(--font-display)] text-xl font-black tracking-[-0.06em] text-[#e7bc4b] transition hover:text-[#f5d78a]"
+              className="shrink-0 font-[family-name:var(--font-display)] text-xl font-black tracking-[-0.06em] transition"
             >
-              AI Video Clipper
+              <span className="text-[#22c55e]">Nortis</span>{" "}
+              <span className="text-[#e8c000]">Clipper AI</span>
             </Link>
             <nav className="hidden items-center gap-5 md:flex">
-              {navItems.map((item) => (
+              {NAV_ITEMS.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   className={`border-b-2 pb-1 font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase leading-4 tracking-[0.25em] transition-colors ${
                     activeHref === item.href
-                      ? "border-[#e7bc4b] text-[#e7bc4b]"
-                      : "border-transparent text-[#b8d4c2] hover:text-[#e7bc4b]"
+                      ? "border-[#e8c000] text-[#e8c000]"
+                      : "border-transparent text-[#b8d4c2] hover:text-[#e8c000]"
                   }`}
                 >
                   {item.label}
@@ -128,18 +111,18 @@ export async function AppShell({
                 type="search"
                 placeholder="Search tasks..."
                 suppressHydrationWarning
-                className="h-9 w-56 rounded-lg border border-transparent bg-[#032e1a]/70 pl-9 pr-3 text-sm text-white outline-none transition placeholder:text-[#b8d4c2] focus:border-[rgba(231,188,75,0.35)] focus:bg-[#032e1a]"
+                className="h-9 w-56 rounded-lg border border-transparent bg-[#1b1d26]/70 pl-9 pr-3 text-sm text-white outline-none transition placeholder:text-[#b8d4c2] focus:border-[rgba(232,192,0,0.35)] focus:bg-[#1b1d26]"
               />
             </label>
             <button
               type="button"
               aria-label="Notifications"
               suppressHydrationWarning
-              className="text-[#b8d4c2] transition hover:text-[#e7bc4b] active:scale-95"
+              className="text-[#b8d4c2] transition hover:text-[#e8c000] active:scale-95"
             >
               <BellIcon />
             </button>
-            <div className="hidden items-center gap-2 rounded-lg border border-[rgba(231,188,75,0.18)] bg-[#032e1a]/70 px-2.5 py-1.5 md:flex">
+            <div className="hidden items-center gap-2 rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26]/70 px-2.5 py-1.5 md:flex">
               <span className="text-[#b8d4c2]">
                 <UserIcon />
               </span>
@@ -158,18 +141,6 @@ export async function AppShell({
       </header>
 
       <main className="mx-auto w-full max-w-[1200px] px-5 pb-20 pt-28 md:px-8">
-        <section className="mb-10 max-w-3xl">
-          <p className="mb-2 block font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase leading-4 tracking-[0.35em] text-[#e7bc4b]/80">
-            {eyebrow}
-          </p>
-          <h1 className="max-w-4xl font-[family-name:var(--font-display)] text-[2.25rem] font-black leading-[2.75rem] tracking-[-0.04em] text-white md:text-5xl md:leading-[3.25rem]">
-            {renderTitle(title)}
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-[#b8d4c2]">
-            {description}
-          </p>
-        </section>
-
         {children}
       </main>
 
@@ -177,23 +148,24 @@ export async function AppShell({
         <Link
           href="/videos/new"
           aria-label="New clip task"
-          className="group fixed bottom-6 right-6 z-40 hidden size-14 items-center justify-center rounded-full bg-[#e7bc4b] font-[family-name:var(--font-display)] text-4xl font-black leading-none text-[#022a18] shadow-[0_18px_50px_rgba(231,188,75,0.25)] transition hover:scale-110 hover:bg-[#f5d78a] active:scale-95 sm:inline-flex"
+          className="group fixed bottom-6 right-6 z-40 hidden size-14 items-center justify-center rounded-full bg-[#e8c000] font-[family-name:var(--font-display)] text-4xl font-black leading-none text-[#1b1d26] shadow-[0_18px_50px_rgba(232,192,0,0.25)] transition hover:scale-110 hover:bg-[#f5d78a] active:scale-95 sm:inline-flex"
         >
           <span className="-mt-1">+</span>
-          <span className="pointer-events-none absolute right-16 rounded-lg border border-[rgba(231,188,75,0.20)] bg-[#032e1a] px-4 py-2 font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-[0.25em] text-white shadow-[0_18px_50px_rgba(0,0,0,0.30)] transition-opacity group-hover:opacity-100">
+          <span className="pointer-events-none absolute right-16 rounded-lg border border-[rgba(232,192,0,0.20)] bg-[#1b1d26] px-4 py-2 font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase tracking-[0.25em] text-white shadow-[0_18px_50px_rgba(0,0,0,0.30)] transition-opacity group-hover:opacity-100">
             New clip task
           </span>
         </Link>
       ) : null}
 
-      <footer className="border-t border-[rgba(231,188,75,0.12)] bg-[#032e1a]">
+      <footer className="border-t border-[rgba(232,192,0,0.12)] bg-[#1b1d26]">
         <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-6 px-5 py-10 text-[#b8d4c2] md:flex-row md:items-center md:justify-between md:px-8">
           <div className="grid gap-1.5">
-            <span className="font-[family-name:var(--font-display)] text-xl font-black tracking-[-0.06em] text-[#e7bc4b]">
-              AI Video Clipper
+            <span className="font-[family-name:var(--font-display)] text-xl font-black tracking-[-0.06em]">
+              <span className="text-[#22c55e]">Nortis</span>{" "}
+              <span className="text-[#e8c000]">Clipper AI</span>
             </span>
             <span className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase leading-4 tracking-[0.25em]">
-              Reap API {">"} Storage {">"} TikTok Publish
+              From raw footage to social hits.
             </span>
           </div>
           <nav className="flex flex-wrap gap-5">
@@ -206,7 +178,7 @@ export async function AppShell({
               <Link
                 key={href}
                 href={href}
-                className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase leading-4 tracking-[0.25em] text-[#b8d4c2] transition hover:text-[#e7bc4b]"
+                className="font-[family-name:var(--font-mono)] text-[11px] font-bold uppercase leading-4 tracking-[0.25em] text-[#b8d4c2] transition hover:text-[#e8c000]"
               >
                 {label}
               </Link>
