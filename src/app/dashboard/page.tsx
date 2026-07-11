@@ -100,7 +100,7 @@ export default async function DashboardPage() {
       description="The dashboard now reads live task data, surfaces worker failures, and keeps retry actions close to the error."
     >
       {/* Sub-header */}
-      <div className="mb-5 flex items-center justify-between rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] px-5 py-3">
+      <div className="mb-5 flex items-center justify-between rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1e2130] px-5 py-3">
         <div className="flex items-center gap-4">
           <h1 className="font-[family-name:var(--font-display)] text-sm font-bold text-white">
             Overview
@@ -140,7 +140,7 @@ export default async function DashboardPage() {
               type="search"
               placeholder="Search posts..."
               suppressHydrationWarning
-              className="h-8 w-44 rounded-md border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] pl-7 pr-3 font-[family-name:var(--font-mono)] text-xs text-white outline-none transition placeholder:text-[#b8d4c2] focus:border-[rgba(232,192,0,0.35)]"
+              className="h-8 w-44 rounded-md border border-[rgba(232,192,0,0.18)] bg-[#1e2130] pl-7 pr-3 font-[family-name:var(--font-mono)] text-xs text-white outline-none transition placeholder:text-[#b8d4c2] focus:border-[rgba(232,192,0,0.35)]"
             />
           </div>
         </div>
@@ -178,7 +178,7 @@ export default async function DashboardPage() {
         </div>
 
         {/* Recent task pulse */}
-        <section className="rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] p-5">
+        <section className="rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1e2130] p-5">
           <div className="flex items-start justify-between mb-5">
             <div>
               <h2 className="font-[family-name:var(--font-display)] text-base font-black tracking-[-0.04em] text-white">
@@ -202,7 +202,7 @@ export default async function DashboardPage() {
                 <Link
                   key={video.id}
                   href={`/videos/${video.id}`}
-                  className="flex items-center justify-between gap-4 rounded-lg border border-[rgba(232,192,0,0.18)] bg-[rgba(27,29,38,0.70)] px-4 py-3.5 transition hover:-translate-y-0.5 hover:border-[rgba(232,192,0,0.40)]"
+                  className="flex items-center justify-between gap-4 rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1e2130] px-4 py-3.5 transition hover:-translate-y-0.5 hover:border-[rgba(232,192,0,0.40)]"
                 >
                   <div className="min-w-0">
                     <div className="truncate font-[family-name:var(--font-display)] text-sm font-bold text-white leading-snug">
@@ -221,7 +221,7 @@ export default async function DashboardPage() {
                 </Link>
               ))
             ) : (
-              <div className="rounded-lg border border-dashed border-[rgba(232,192,0,0.18)] bg-[rgba(27,29,38,0.70)] p-6 text-center">
+              <div className="rounded-lg border border-dashed border-[rgba(232,192,0,0.18)] bg-[#1e2130] p-6 text-center">
                 <p className="font-[family-name:var(--font-display)] font-black tracking-[-0.04em] text-white">
                   No video tasks yet.
                 </p>
@@ -275,7 +275,7 @@ export default async function DashboardPage() {
 
         {/* Operator Note Section */}
         <section className="grid grid-cols-1 gap-5 lg:grid-cols-3">
-          <div className="lg:col-span-2 rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] p-5">
+          <div className="lg:col-span-2 rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1e2130] p-5">
             <p className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase leading-4 tracking-[0.25em] text-[#e8c000]">
               Operator note
             </p>
@@ -291,7 +291,7 @@ export default async function DashboardPage() {
               failed work.
             </p>
           </div>
-          <div className="lg:col-span-1 rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] p-5">
+          <div className="lg:col-span-1 rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1e2130] p-5">
             <div className="flex items-center justify-between">
               <p className="font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase leading-4 tracking-[0.25em] text-[#b8d4c2]">
                 System telemetry
