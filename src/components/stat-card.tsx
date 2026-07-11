@@ -17,7 +17,7 @@ export function StatCard({
   }[tone];
 
   const toneBg = {
-    neutral: "bg-[#1b1d26]",
+    neutral: "bg-[#1e2130]",
     ember: "bg-[rgba(255,180,171,0.08)]",
     moss: "bg-[rgba(34,197,94,0.06)]",
     steel: "bg-[rgba(232,192,0,0.08)]",

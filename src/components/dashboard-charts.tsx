@@ -78,7 +78,7 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
   return (
     <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
       {/* Engagement trend */}
-      <div className="lg:col-span-2 rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] p-4">
+      <div className="lg:col-span-2 rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1e2130] p-4">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="font-[family-name:var(--font-display)] text-sm font-black tracking-[-0.04em] text-white">
@@ -106,7 +106,7 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
         </div>
 
         {!hasData ? (
-          <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-[rgba(232,192,0,0.18)] bg-[rgba(27,29,38,0.70)]">
+          <div className="flex h-[200px] items-center justify-center rounded-lg border border-dashed border-[rgba(232,192,0,0.18)] bg-[#1e2130]">
             <div className="text-center">
               <p className="font-[family-name:var(--font-display)] font-black tracking-[-0.04em] text-white">
                 No analytics data yet.
@@ -127,9 +127,7 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
                     activePlatforms.has(key) ? "opacity-100" : "opacity-30"
                   }`}
                 >
-                  <span
-                    className={`size-2 rounded-full ${meta.dotClass}`}
-                  />
+                  <span className={`size-2 rounded-full ${meta.dotClass}`} />
                   {meta.label}
                 </button>
               ))}
@@ -225,7 +223,7 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
       </div>
 
       {/* Platform score bars */}
-      <div className="rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] p-4">
+      <div className="rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1e2130] p-4">
         <div className="mb-4">
           <h2 className="font-[family-name:var(--font-display)] text-sm font-black tracking-[-0.04em] text-white">
             Platform Score
@@ -331,9 +329,7 @@ export function DashboardCharts({ enabledPlatforms }: DashboardChartsProps) {
                 { label: "Saves", color: "#38bdf8", dotClass: "bg-[#38bdf8]" },
               ].map(({ label, dotClass }) => (
                 <div key={label} className="flex items-center gap-1.5">
-                  <span
-                    className={`size-2 rounded-full ${dotClass}`}
-                  />
+                  <span className={`size-2 rounded-full ${dotClass}`} />
                   <span className="font-[family-name:var(--font-mono)] text-[11px] text-[#b8d4c2]">
                     {label}
                   </span>

@@ -142,7 +142,7 @@ function ChevronDownIcon() {
 
 export function RecentPostsTable({ posts }: RecentPostsTableProps) {
   return (
-    <div className="rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1b1d26] overflow-hidden">
+    <div className="rounded-lg border border-[rgba(232,192,0,0.18)] bg-[#1e2130] overflow-hidden">
       <div className="flex items-center justify-between px-5 py-4 border-b border-[rgba(232,192,0,0.18)]">
         <h2 className="font-[family-name:var(--font-display)] text-sm font-black tracking-[-0.04em] text-white">
           Recent Posts
