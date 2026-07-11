@@ -181,7 +181,7 @@ export function InstagramAccountSelector({
           {accounts.map((acc) => (
             <label
               key={acc.id}
-              className="flex cursor-pointer items-center gap-3 rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] px-3 py-2 text-sm text-[#e2e2e1] transition hover:border-[rgba(223,254,0,0.40)]"
+              className="flex cursor-pointer items-center gap-3 rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#1e2130] px-3 py-2 text-sm text-[#e2e2e1] transition hover:border-[rgba(223,254,0,0.40)]"
             >
               <input
                 type="checkbox"
@@ -217,7 +217,7 @@ export function InstagramAccountSelector({
         type="button"
         onClick={connectNewAccount}
         disabled={isConnecting}
-        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[rgba(223,254,0,0.30)] bg-[rgba(30,32,32,0.70)] px-4 py-2 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#dffe00] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.60)] disabled:cursor-not-allowed disabled:opacity-60"
+        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[rgba(223,254,0,0.30)] bg-[#1e2130] px-4 py-2 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#dffe00] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.60)] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {isConnecting ? "Connecting..." : "+ Connect New Account"}
       </button>

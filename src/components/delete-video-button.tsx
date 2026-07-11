@@ -72,8 +72,8 @@ export function DeleteVideoButton({ id, compact }: DeleteVideoButtonProps) {
         disabled={deleting}
         className={
           compact
-            ? "inline-flex min-h-0 items-center justify-center gap-2 rounded-lg border border-[rgba(255,180,171,0.30)] bg-[rgba(30,32,32,0.70)] px-4 py-2 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#ffb4ab] transition hover:-translate-y-0.5 hover:border-[#ffb4ab] hover:text-[#ffb4ab]"
-            : "inline-flex min-h-0 items-center justify-center gap-2 rounded-lg border border-[rgba(255,180,171,0.30)] bg-[rgba(30,32,32,0.70)] px-4 py-2 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#ffb4ab] transition hover:-translate-y-0.5 hover:border-[#ffb4ab] hover:text-[#ffb4ab]"
+            ? "inline-flex min-h-0 items-center justify-center gap-2 rounded-lg border border-[rgba(255,180,171,0.30)] bg-[#1e2130] px-4 py-2 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#ffb4ab] transition hover:-translate-y-0.5 hover:border-[#ffb4ab] hover:text-[#ffb4ab]"
+            : "inline-flex min-h-0 items-center justify-center gap-2 rounded-lg border border-[rgba(255,180,171,0.30)] bg-[#1e2130] px-4 py-2 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#ffb4ab] transition hover:-translate-y-0.5 hover:border-[#ffb4ab] hover:text-[#ffb4ab]"
         }
       >
         {deleting ? "Deleting…" : "Delete"}
@@ -108,7 +108,7 @@ export function DeleteVideoButton({ id, compact }: DeleteVideoButtonProps) {
                 type="button"
                 onClick={handleClose}
                 disabled={deleting}
-                className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] px-4 py-2 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#c6c9ab] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)] hover:text-[#dffe00]"
+                className="inline-flex min-h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#1e2130] px-4 py-2 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#c6c9ab] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)] hover:text-[#dffe00]"
               >
                 Cancel
               </button>

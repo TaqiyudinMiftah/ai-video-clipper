@@ -91,7 +91,7 @@ export default async function IntegrationsPage() {
           </p>
 
           <div className="mt-6 grid gap-4 lg:grid-cols-3">
-            <div className="rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] p-4">
+            <div className="rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#1e2130] p-4">
               <p className="font-black text-[#dffe00]">For Local Development (ngrok)</p>
               <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-[#c6c9ab]">
                 <li>Install ngrok: <code className="rounded bg-[rgba(223,254,0,0.10)] px-1 py-0.5 text-[#dffe00]">npm install -g ngrok</code> atau download dari ngrok.com</li>
@@ -104,7 +104,7 @@ export default async function IntegrationsPage() {
               </ol>
             </div>
 
-            <div className="rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] p-4">
+            <div className="rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#1e2130] p-4">
               <p className="font-black text-[#dffe00]">For Production</p>
               <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm text-[#c6c9ab]">
                 <li>Pastikan domain kamu punya SSL/HTTPS (wajib untuk webhook)</li>
@@ -113,7 +113,7 @@ export default async function IntegrationsPage() {
               </ol>
             </div>
 
-            <div className="rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] p-4">
+            <div className="rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#1e2130] p-4">
               <p className="font-black text-[#dffe00]">Important Notes</p>
               <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-[#c6c9ab]">
                 <li>Reap requires HTTPS endpoint (ngrok provides this automatically)</li>

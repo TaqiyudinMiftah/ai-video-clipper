@@ -47,7 +47,7 @@ export function SignOutButton() {
       type="button"
       onClick={() => void signOut({ callbackUrl: "/" })}
       suppressHydrationWarning
-      className="inline-flex min-h-0 items-center justify-center rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] px-3 py-2 font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase leading-4 tracking-[0.18em] text-[#c6c9ab] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)] hover:text-[#dffe00]"
+      className="inline-flex min-h-0 items-center justify-center rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#1e2130] px-3 py-2 font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase leading-4 tracking-[0.18em] text-[#c6c9ab] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)] hover:text-[#dffe00]"
     >
       Sign out
     </button>

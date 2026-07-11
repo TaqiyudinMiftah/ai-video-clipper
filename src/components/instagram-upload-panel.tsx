@@ -107,7 +107,7 @@ export function InstagramUploadPanel({
   }
 
   return (
-    <section className="grid gap-3 rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] p-4">
+    <section className="grid gap-3 rounded-xl border border-[rgba(223,254,0,0.15)] bg-[#1e2130] p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#dffe00]">
@@ -162,7 +162,7 @@ export function InstagramUploadPanel({
       ) : null}
 
       {!storagePath ? (
-        <p className="rounded-lg border border-[#c6c9ab] bg-[rgba(30,32,32,0.70)] px-4 py-3 text-sm font-bold text-[#c6c9ab]">
+        <p className="rounded-lg border border-[#c6c9ab] bg-[#1e2130] px-4 py-3 text-sm font-bold text-[#c6c9ab]">
           This clip needs a storage path before Instagram upload can be queued.
         </p>
       ) : null}

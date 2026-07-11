@@ -24,8 +24,14 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Automation Video Clipper",
-  description: "MVP dashboard for submitting videos, tracking clips, and preparing TikTok uploads.",
+  title: "Nortis Clipper AI",
+  description:
+    "MVP dashboard for submitting videos, tracking clips, and preparing TikTok uploads.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -34,7 +40,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${beVietnamPro.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      className={`${beVietnamPro.variable} ${inter.variable} ${jetbrainsMono.variable}`}
+    >
       <body suppressHydrationWarning>{children}</body>
     </html>
   );

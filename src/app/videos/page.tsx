@@ -66,7 +66,7 @@ export default async function VideosPage() {
             videos.map((video) => (
               <article
                 key={video.id}
-                className="grid gap-4 rounded-none border border-x-0 border-b-0 border-t border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] p-5 md:grid-cols-[1.15fr_0.9fr_0.45fr_0.6fr_auto] md:items-center"
+                className="grid gap-4 rounded-none border border-x-0 border-b-0 border-t border-[rgba(223,254,0,0.15)] bg-[#1e2130] p-5 md:grid-cols-[1.15fr_0.9fr_0.45fr_0.6fr_auto] md:items-center"
               >
                 <div>
                   <h3 className="font-[family-name:var(--font-display)] text-lg font-black tracking-[-0.04em] text-white">
@@ -93,7 +93,7 @@ export default async function VideosPage() {
                 <div className="flex flex-col gap-2">
                   <Link
                     href={`/videos/${video.id}`}
-                    className="inline-flex min-h-0 items-center justify-center gap-2 rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] px-4 py-2 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#c6c9ab] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)] hover:text-[#dffe00]"
+                    className="inline-flex min-h-0 items-center justify-center gap-2 rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#1e2130] px-4 py-2 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#c6c9ab] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)] hover:text-[#dffe00]"
                   >
                     View
                   </Link>
@@ -105,7 +105,7 @@ export default async function VideosPage() {
               </article>
             ))
           ) : (
-            <div className="rounded-none border border-x-0 border-b-0 border-t border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] p-8 text-center">
+            <div className="rounded-none border border-x-0 border-b-0 border-t border-[rgba(223,254,0,0.15)] bg-[#1e2130] p-8 text-center">
               <p className="font-[family-name:var(--font-display)] text-2xl font-black tracking-[-0.04em] text-white">
                 No video tasks yet.
               </p>

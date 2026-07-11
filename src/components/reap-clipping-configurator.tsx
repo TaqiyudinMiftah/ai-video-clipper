@@ -168,6 +168,11 @@ export function ReapClippingConfigurator({
   const [message, setMessage] = useState("");
   const [isPending, startTransition] = useTransition();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [thumbError, setThumbError] = useState(false);
+
+  useEffect(() => {
+    setThumbError(false);
+  }, [sourceThumbnailUrl]);
 
   useEffect(() => {
     let cancelled = false;
@@ -358,20 +363,18 @@ export function ReapClippingConfigurator({
 
   return (
     <section className="rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(22,21,20,0.84)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.40)] backdrop-blur-xl">
-      <div className="flex flex-col gap-4 rounded-xl border border-[rgba(223,254,0,0.12)] bg-[rgba(30,32,32,0.70)] p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 rounded-xl border border-[rgba(223,254,0,0.12)] bg-[#1e2130] p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="grid min-w-0 gap-4 sm:grid-cols-[9rem_1fr] sm:items-center">
           <div className="relative aspect-video overflow-hidden rounded-lg border border-[rgba(223,254,0,0.16)] bg-[#161514]">
-            {sourceThumbnailUrl ? (
+            {sourceThumbnailUrl && !thumbError ? (
               <img
                 src={sourceThumbnailUrl}
                 alt=""
                 className="h-full w-full object-cover"
                 referrerPolicy="no-referrer"
-                onError={(event) => {
-                  event.currentTarget.style.display = "none";
-                }}
+                onError={() => setThumbError(true)}
               />
-            ) : (
+            ) : sourceThumbnailUrl ? null : (
               <div className="grid h-full place-items-center px-3 text-center font-[family-name:var(--font-mono)] text-[10px] font-bold uppercase tracking-[0.18em] text-[#909378]">
                 Source
               </div>
@@ -458,7 +461,7 @@ export function ReapClippingConfigurator({
               type="button"
               onClick={openPresetModal}
               disabled={presetsLoading}
-              className="inline-flex min-h-10 items-center justify-center rounded-full border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] px-5 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.14em] text-[#c6c9ab] transition hover:-translate-y-0.5 hover:border-[#dffe00] hover:text-[#dffe00] disabled:cursor-wait disabled:opacity-50 disabled:hover:translate-y-0"
+              className="inline-flex min-h-10 items-center justify-center rounded-full border border-[rgba(223,254,0,0.15)] bg-[#1e2130] px-5 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.14em] text-[#c6c9ab] transition hover:-translate-y-0.5 hover:border-[#dffe00] hover:text-[#dffe00] disabled:cursor-wait disabled:opacity-50 disabled:hover:translate-y-0"
             >
               More styles
             </button>
@@ -467,7 +470,7 @@ export function ReapClippingConfigurator({
         </div>
 
         <div className="grid gap-4">
-          <div className="flex items-center justify-between gap-4 rounded-xl border border-[rgba(223,254,0,0.12)] bg-[rgba(30,32,32,0.70)] p-4">
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-[rgba(223,254,0,0.12)] bg-[#1e2130] p-4">
             <div>
               <p className="font-black text-white">Auto Text Hooks <span className="ml-2 rounded bg-[#444] px-2 py-0.5 text-[10px] text-[#c6c9ab]">BETA</span></p>
               <p className="mt-1 text-sm leading-6 text-[#c6c9ab]">Placeholder only for now; Reap create-clips payload is not wired for this option.</p>
@@ -475,7 +478,7 @@ export function ReapClippingConfigurator({
             <Toggle checked={false} onChange={() => undefined} disabled />
           </div>
 
-          <div className="flex items-center justify-between gap-4 rounded-xl border border-[rgba(223,254,0,0.12)] bg-[rgba(30,32,32,0.70)] p-4">
+          <div className="flex items-center justify-between gap-4 rounded-xl border border-[rgba(223,254,0,0.12)] bg-[#1e2130] p-4">
             <div>
               <p className="font-black text-white">Face tracking</p>
               <p className="mt-1 text-sm leading-6 text-[#c6c9ab]">Keep faces centered by reframing clips for the selected orientation.</p>
@@ -520,7 +523,7 @@ export function ReapClippingConfigurator({
           />
         </div>
 
-        <div className="rounded-xl border border-[rgba(223,254,0,0.12)] bg-[rgba(30,32,32,0.70)] p-4">
+        <div className="rounded-xl border border-[rgba(223,254,0,0.12)] bg-[#1e2130] p-4">
           <p className="font-black text-white">Processing Time Frame</p>
           <div className="mt-4 grid gap-2 sm:grid-cols-2">
             <NumberField label="Start seconds" value={config.selectedStart ?? ""} onChange={(value) => updateConfig({ selectedStart: value === "" ? null : Number(value) })} />
@@ -548,7 +551,7 @@ export function ReapClippingConfigurator({
           </div>
         </div>
 
-        <label className="grid gap-2 rounded-xl border border-[rgba(223,254,0,0.12)] bg-[rgba(30,32,32,0.70)] p-4">
+        <label className="grid gap-2 rounded-xl border border-[rgba(223,254,0,0.12)] bg-[#1e2130] p-4">
           <span className="font-black text-white">Clip Topics (optional)</span>
           <span className="text-sm text-[#c6c9ab]">Add keywords to guide what AI should clip, separated by commas.</span>
           <input

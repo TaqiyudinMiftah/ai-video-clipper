@@ -9,7 +9,8 @@ const legalLinks = [
   {
     href: "/privacy",
     label: "Privacy Policy",
-    description: "Review how this MVP handles submitted content and integration data.",
+    description:
+      "Review how this MVP handles submitted content and integration data.",
   },
 ];
 
@@ -18,20 +19,36 @@ export default function HomePage() {
     <main className="min-h-screen text-[#e2e2e1]">
       <header className="fixed left-0 right-0 top-0 z-50 h-20 border-b border-[rgba(69,73,50,0.35)] bg-[#121414]/85 backdrop-blur-xl">
         <div className="mx-auto flex h-full w-full max-w-[1280px] items-center justify-between px-5 md:px-10">
-          <Link href="/" className="font-[family-name:var(--font-display)] text-2xl font-black tracking-[-0.06em] text-[#dffe00] transition hover:text-[#39ff14]">
-            AI Video Clipper
+          <Link
+            href="/"
+            className="font-[family-name:var(--font-display)] text-2xl font-black tracking-[-0.06em] transition"
+          >
+            <span className="text-[#22c55e]">Nortis</span>{" "}
+            <span className="text-[#e8c000]">Clipper AI</span>
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
-            <Link href="/login" className="border-b-2 border-transparent pb-1 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.25em] text-[#c6c9ab] transition hover:text-[#dffe00]">
+            <Link
+              href="/login"
+              className="border-b-2 border-transparent pb-1 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.25em] text-[#c6c9ab] transition hover:text-[#dffe00]"
+            >
               Login
             </Link>
-            <Link href="/dashboard" className="border-b-2 border-[#dffe00] pb-1 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.25em] text-[#dffe00]">
+            <Link
+              href="/dashboard"
+              className="border-b-2 border-[#dffe00] pb-1 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.25em] text-[#dffe00]"
+            >
               Dashboard
             </Link>
-            <Link href="/terms" className="border-b-2 border-transparent pb-1 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.25em] text-[#c6c9ab] transition hover:text-[#dffe00]">
+            <Link
+              href="/terms"
+              className="border-b-2 border-transparent pb-1 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.25em] text-[#c6c9ab] transition hover:text-[#dffe00]"
+            >
               Terms
             </Link>
-            <Link href="/privacy" className="border-b-2 border-transparent pb-1 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.25em] text-[#c6c9ab] transition hover:text-[#dffe00]">
+            <Link
+              href="/privacy"
+              className="border-b-2 border-transparent pb-1 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.25em] text-[#c6c9ab] transition hover:text-[#dffe00]"
+            >
               Privacy
             </Link>
           </nav>
@@ -44,13 +61,15 @@ export default function HomePage() {
             Clips automation
           </p>
           <h1 className="font-[family-name:var(--font-display)] text-[3rem] font-black leading-[3.25rem] tracking-[-0.05em] text-[#dffe00] md:text-[4.5rem] md:leading-[5rem]">
-            AI Video Clipper
+            Nortis Clipper AI
           </h1>
           <p className="mt-4 max-w-3xl font-[family-name:var(--font-display)] text-3xl font-black leading-10 tracking-[-0.04em] text-white md:text-5xl md:leading-[3.5rem]">
             AI-assisted video clipping and TikTok upload workflows.
           </p>
           <p className="mt-6 max-w-2xl text-lg leading-8 text-[#c6c9ab]">
-            This MVP helps authorized users submit source videos, review generated clips, prepare metadata, and queue TikTok upload workflows through server-side integrations.
+            This MVP helps authorized users submit source videos, review
+            generated clips, prepare metadata, and queue TikTok upload workflows
+            through server-side integrations.
           </p>
         </div>
 
@@ -58,22 +77,38 @@ export default function HomePage() {
           <article className="rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(22,21,20,0.84)] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.40)] backdrop-blur-xl md:col-span-8">
             <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#39ff14]/80">App access</p>
-                <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl font-black tracking-[-0.04em] text-[#dffe00]">Operator dashboard</h2>
+                <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#39ff14]/80">
+                  App access
+                </p>
+                <h2 className="mt-3 font-[family-name:var(--font-display)] text-3xl font-black tracking-[-0.04em] text-[#dffe00]">
+                  Operator dashboard
+                </h2>
                 <p className="mt-4 max-w-xl leading-7 text-[#c6c9ab]">
-                  The dashboard requires production database and queue environment variables. Legal and app information pages remain publicly accessible for platform review.
+                  The dashboard requires production database and queue
+                  environment variables. Legal and app information pages remain
+                  publicly accessible for platform review.
                 </p>
               </div>
-              <div className="rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] p-4">
-                <p className="font-[family-name:var(--font-mono)] text-[13px] font-medium uppercase leading-[18px] text-[#909378]">QUEUE</p>
-                <p className="mt-2 font-[family-name:var(--font-display)] text-3xl font-black tracking-[-0.04em] text-white">READY</p>
+              <div className="rounded-xl border border-[rgba(223,254,0,0.15)] bg-[#1e2130] p-4">
+                <p className="font-[family-name:var(--font-mono)] text-[13px] font-medium uppercase leading-[18px] text-[#909378]">
+                  QUEUE
+                </p>
+                <p className="mt-2 font-[family-name:var(--font-display)] text-3xl font-black tracking-[-0.04em] text-white">
+                  READY
+                </p>
               </div>
             </div>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center">
-              <Link href="/login" className="inline-flex h-14 items-center justify-center rounded-lg bg-[#d3f000] px-6 py-3 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.18em] text-[#2c3400] transition hover:-translate-y-0.5 hover:bg-[#39ff14]">
+              <Link
+                href="/login"
+                className="inline-flex h-14 items-center justify-center rounded-lg bg-[#d3f000] px-6 py-3 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.18em] text-[#2c3400] transition hover:-translate-y-0.5 hover:bg-[#39ff14]"
+              >
                 Login or sign up
               </Link>
-              <Link href="/dashboard" className="inline-flex h-14 items-center justify-center rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] px-6 py-3 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.18em] text-[#c6c9ab] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)] hover:text-[#dffe00]">
+              <Link
+                href="/dashboard"
+                className="inline-flex h-14 items-center justify-center rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#1e2130] px-6 py-3 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.18em] text-[#c6c9ab] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)] hover:text-[#dffe00]"
+              >
                 Open dashboard
               </Link>
               <span className="font-[family-name:var(--font-mono)] text-[13px] font-medium leading-[18px] text-[#c6c9ab]">
@@ -91,15 +126,20 @@ export default function HomePage() {
                 className="group flex min-h-40 flex-col justify-between rounded-xl border border-[rgba(223,254,0,0.15)] bg-[rgba(22,21,20,0.84)] p-6 shadow-[0_24px_80px_rgba(0,0,0,0.40)] backdrop-blur-xl transition hover:-translate-y-0.5 hover:bg-[rgba(51,53,53,0.55)]"
               >
                 <div>
-                  <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#909378]">Public page</p>
-                  <h2 className="mt-3 font-[family-name:var(--font-display)] text-2xl font-black tracking-[-0.04em] text-white transition group-hover:text-[#dffe00]">{link.label}</h2>
+                  <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#909378]">
+                    Public page
+                  </p>
+                  <h2 className="mt-3 font-[family-name:var(--font-display)] text-2xl font-black tracking-[-0.04em] text-white transition group-hover:text-[#dffe00]">
+                    {link.label}
+                  </h2>
                 </div>
-                <p className="mt-4 text-sm leading-6 text-[#c6c9ab]">{link.description}</p>
+                <p className="mt-4 text-sm leading-6 text-[#c6c9ab]">
+                  {link.description}
+                </p>
               </Link>
             ))}
           </div>
         </div>
-
       </section>
     </main>
   );

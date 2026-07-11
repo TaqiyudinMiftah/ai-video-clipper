@@ -1,14 +1,24 @@
 function SkeletonBlock({ className = "" }: { className?: string }) {
-  return <div aria-hidden="true" className={`animate-pulse rounded-md bg-white/[0.07] ${className}`} />;
+  return (
+    <div
+      aria-hidden="true"
+      className={`animate-pulse rounded-md bg-white/[0.07] ${className}`}
+    />
+  );
 }
 
 export default function DashboardLoading() {
   return (
-    <div className="min-h-screen text-[#e2e2e1]" aria-busy="true" aria-label="Loading dashboard">
+    <div
+      className="min-h-screen text-[#e2e2e1]"
+      aria-busy="true"
+      aria-label="Loading dashboard"
+    >
       <header className="fixed left-0 right-0 top-0 z-50 border-b border-[rgba(69,73,50,0.35)] bg-[#121414]/95 shadow-sm shadow-black/40">
         <div className="mx-auto flex h-20 w-full max-w-[1280px] items-center justify-between px-5 md:px-10">
-          <span className="font-[family-name:var(--font-display)] text-2xl font-black tracking-[-0.06em] text-[#dffe00]">
-            AI Video Clipper
+          <span className="font-[family-name:var(--font-display)] text-2xl font-black tracking-[-0.06em]">
+            <span className="text-[#22c55e]">Nortis</span>{" "}
+            <span className="text-[#e8c000]">Clipper AI</span>
           </span>
           <div className="hidden items-center gap-3 md:flex">
             <SkeletonBlock className="h-9 w-36" />
@@ -50,7 +60,10 @@ export default function DashboardLoading() {
             </div>
             <div className="mt-7 grid gap-3">
               {[0, 1, 2, 3].map((item) => (
-                <div key={item} className="grid min-h-20 gap-3 rounded-lg border border-[rgba(223,254,0,0.12)] bg-[rgba(30,32,32,0.70)] p-4 md:grid-cols-[1fr_auto] md:items-center">
+                <div
+                  key={item}
+                  className="grid min-h-20 gap-3 rounded-lg border border-[rgba(223,254,0,0.12)] bg-[#1e2130] p-4 md:grid-cols-[1fr_auto] md:items-center"
+                >
                   <div className="grid gap-2">
                     <SkeletonBlock className="h-5 w-2/3" />
                     <SkeletonBlock className="h-3 w-1/2" />

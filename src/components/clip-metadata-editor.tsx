@@ -150,7 +150,7 @@ export function ClipMetadataEditor({ clip }: { clip: ClipMetadata }) {
           type="button"
           onClick={generateCaption}
           disabled={busy}
-          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-[rgba(223,254,0,0.15)] bg-[rgba(30,32,32,0.70)] px-4 py-2.5 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#c6c9ab] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)] hover:text-[#dffe00] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
+          className="inline-flex min-h-11 flex-1 items-center justify-center gap-2 rounded-lg border border-[rgba(223,254,0,0.15)] bg-[#1e2130] px-4 py-2.5 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#c6c9ab] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.42)] hover:text-[#dffe00] disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0"
         >
           {action === "generate" ? "Generating..." : "Generate caption"}
         </button>
