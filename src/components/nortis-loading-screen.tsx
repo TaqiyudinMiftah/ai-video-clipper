@@ -82,64 +82,19 @@ export function NortisLoadingScreen({
       <div className="relative z-10 flex flex-col items-center gap-10">
         {/* Logo mark */}
         <div className="flex flex-col items-center gap-3">
-          {/* Animated scissor/clip icon */}
-          <div className="relative w-16 h-16 mb-2">
+          {/* Logo icon */}
+          <div className="relative w-20 h-20 mb-2">
             <div
               className="absolute inset-0 rounded-2xl animate-pulse"
               style={{
                 background: `linear-gradient(135deg, ${NAV_GREEN}20, ${NAV_YELLOW}20)`,
-                border: `1px solid ${NAV_YELLOW}30`,
               }}
             />
-            <div className="absolute inset-0 flex items-center justify-center">
-              <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                {/* Stylized clip/scissors mark */}
-                <path
-                  d="M8 8 L20 20"
-                  stroke={NAV_GREEN}
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  style={{
-                    strokeDasharray: 20,
-                    strokeDashoffset: progress < 20 ? 20 : 0,
-                    transition: "stroke-dashoffset 0.4s ease",
-                  }}
-                />
-                <path
-                  d="M20 8 L8 20"
-                  stroke={NAV_YELLOW}
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  style={{
-                    strokeDasharray: 20,
-                    strokeDashoffset: progress < 40 ? 20 : 0,
-                    transition: "stroke-dashoffset 0.4s ease 0.2s",
-                  }}
-                />
-                <circle
-                  cx="7"
-                  cy="7"
-                  r="3.5"
-                  stroke={NAV_GREEN}
-                  strokeWidth="2"
-                  style={{
-                    opacity: progress > 30 ? 1 : 0,
-                    transition: "opacity 0.3s",
-                  }}
-                />
-                <circle
-                  cx="7"
-                  cy="21"
-                  r="3.5"
-                  stroke={NAV_YELLOW}
-                  strokeWidth="2"
-                  style={{
-                    opacity: progress > 50 ? 1 : 0,
-                    transition: "opacity 0.3s",
-                  }}
-                />
-              </svg>
-            </div>
+            <img
+              src="/logo.png"
+              alt="Nortis Clipper AI"
+              className="relative w-full h-full object-cover rounded-2xl"
+            />
           </div>
 
           <div className="text-4xl font-bold tracking-tight flex items-center gap-2">
