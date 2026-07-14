@@ -1,14 +1,5 @@
+import { requireEnv } from "@/lib/env";
 import type { ComposioExecuteActionResponse } from "./types";
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(
-      `Environment variable ${name} is required for Composio operations.`,
-    );
-  }
-  return value;
-}
 
 export type ComposioClientConfig = {
   apiKey: string;

@@ -16,10 +16,11 @@ jobs:
       NEXT_PUBLIC_APP_URL: http://localhost:3000
       NEXTAUTH_SECRET: ci-secret
       NEXTAUTH_URL: http://localhost:3000
-      STORAGE_PROVIDER: supabase
-      SUPABASE_URL: https://example.supabase.co
-      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
-      SUPABASE_STORAGE_BUCKET: clips
+      CLOUDFLARE_R2_ACCOUNT_ID: ci-account-id
+      CLOUDFLARE_R2_ACCESS_KEY_ID: ci-access-key-id
+      CLOUDFLARE_R2_SECRET_ACCESS_KEY: ci_secret_access_key_long_enough
+      CLOUDFLARE_R2_BUCKET: ai-video-clipper
+      CLOUDFLARE_R2_PUBLIC_URL: https://pub.example.r2.dev
       REAP_API_KEY: ci-placeholder
       REAP_BASE_URL: https://public.reap.video/api/v1/automation
     steps:
@@ -57,10 +58,11 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_URL: ${{ secrets.DIRECT_URL }}
           REDIS_URL: ${{ secrets.REDIS_URL }}
-          STORAGE_PROVIDER: ${{ secrets.STORAGE_PROVIDER }}
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          SUPABASE_STORAGE_BUCKET: ${{ secrets.SUPABASE_STORAGE_BUCKET }}
+          CLOUDFLARE_R2_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_R2_ACCOUNT_ID }}
+          CLOUDFLARE_R2_ACCESS_KEY_ID: ${{ secrets.CLOUDFLARE_R2_ACCESS_KEY_ID }}
+          CLOUDFLARE_R2_SECRET_ACCESS_KEY: ${{ secrets.CLOUDFLARE_R2_SECRET_ACCESS_KEY }}
+          CLOUDFLARE_R2_BUCKET: ${{ secrets.CLOUDFLARE_R2_BUCKET }}
+          CLOUDFLARE_R2_PUBLIC_URL: ${{ secrets.CLOUDFLARE_R2_PUBLIC_URL }}
           REAP_API_KEY: ${{ secrets.REAP_API_KEY }}
           REAP_WEBHOOK_SECRET: ${{ secrets.REAP_WEBHOOK_SECRET }}
           REAP_WEBHOOK_REQUIRE_TIMESTAMP: "true"

@@ -283,9 +283,9 @@ function requireValue(env: Env, name: string, results: ProductionCheckResult[]) 
   });
 }
 
-function getProviderPair(env: Env, idName: string, secretName: string, fallbackIdName: string, fallbackSecretName: string) {
-  const id = env[idName] || env[fallbackIdName];
-  const secret = env[secretName] || env[fallbackSecretName];
+function getProviderPair(env: Env, idName: string, secretName: string) {
+  const id = env[idName];
+  const secret = env[secretName];
 
   return {
     configured: hasValue(id) && hasValue(secret),
@@ -478,8 +478,8 @@ function validateRedisCommandBudget(env: Env, results: ProductionCheckResult[]) 
 }
 
 function validateOAuth(env: Env, results: ProductionCheckResult[]) {
-  const google = getProviderPair(env, "AUTH_GOOGLE_ID", "AUTH_GOOGLE_SECRET", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET");
-  const github = getProviderPair(env, "AUTH_GITHUB_ID", "AUTH_GITHUB_SECRET", "GITHUB_ID", "GITHUB_SECRET");
+  const google = getProviderPair(env, "AUTH_GOOGLE_ID", "AUTH_GOOGLE_SECRET");
+  const github = getProviderPair(env, "AUTH_GITHUB_ID", "AUTH_GITHUB_SECRET");
 
   if (google.partial || github.partial) {
     results.push({
@@ -507,26 +507,11 @@ function validateOAuth(env: Env, results: ProductionCheckResult[]) {
 }
 
 function validateStorage(env: Env, results: ProductionCheckResult[]) {
-  const provider = env.STORAGE_PROVIDER || "supabase";
-
-  if (provider !== "supabase") {
-    results.push({
-      name: "STORAGE_PROVIDER",
-      severity: "error",
-      message: "Only STORAGE_PROVIDER=supabase is implemented in the current MVP.",
-    });
-    return;
-  }
-
-  results.push({
-    name: "STORAGE_PROVIDER",
-    severity: "ok",
-    message: "Supabase storage provider is selected.",
-  });
-
-  validateHttpsUrl(env.SUPABASE_URL, "SUPABASE_URL", results);
-  requireSecret(env, "SUPABASE_SERVICE_ROLE_KEY", results, 24);
-  requireValue(env, "SUPABASE_STORAGE_BUCKET", results);
+  requireValue(env, "CLOUDFLARE_R2_ACCOUNT_ID", results);
+  requireValue(env, "CLOUDFLARE_R2_ACCESS_KEY_ID", results);
+  requireSecret(env, "CLOUDFLARE_R2_SECRET_ACCESS_KEY", results, 24);
+  requireValue(env, "CLOUDFLARE_R2_BUCKET", results);
+  validateHttpsUrl(env.CLOUDFLARE_R2_PUBLIC_URL, "CLOUDFLARE_R2_PUBLIC_URL", results);
 }
 
 function validateWebhook(env: Env, results: ProductionCheckResult[]) {

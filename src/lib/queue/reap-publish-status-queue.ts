@@ -1,5 +1,6 @@
 import { Queue } from "bullmq";
 import type { JobsOptions } from "bullmq";
+import { getPositiveIntegerEnv } from "@/lib/env";
 import { logEvent, serializeError } from "@/lib/observability/logger";
 import { prisma } from "@/lib/prisma";
 import { createQueueRedisConnection } from "@/lib/queue/redis";
@@ -7,11 +8,6 @@ import { createQueueRedisConnection } from "@/lib/queue/redis";
 export const REAP_PUBLISH_STATUS_QUEUE_NAME = "reap-publish-status";
 export const REAP_PUBLISH_STATUS_JOB_NAME = "poll-reap-post";
 export const DEFAULT_REAP_PUBLISH_STATUS_CONCURRENCY = 1;
-
-function getPositiveIntegerEnv(name: string, fallback: number) {
-  const value = Number(process.env[name]);
-  return Number.isInteger(value) && value > 0 ? value : fallback;
-}
 
 export function getReapPublishStatusConfig() {
   const intervalMs = getPositiveIntegerEnv("REAP_PUBLISH_STATUS_INTERVAL_MS", 120_000);

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { StatusBadge } from "@/components/status-badge";
+import { formatDate } from "@/lib/format";
 
 type UploadTargetSummary = {
   id: string;
@@ -18,13 +19,6 @@ type ClipUploadPanelProps = {
   storagePath: string | null;
   uploadTargets: UploadTargetSummary[];
 };
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
 
 export function ClipUploadPanel({
   clipId,

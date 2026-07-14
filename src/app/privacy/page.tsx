@@ -34,7 +34,7 @@ export default function PrivacyPolicyPage() {
 
         <h2 className="font-[family-name:var(--font-display)] text-2xl font-black tracking-[-0.04em] text-white">Third-Party Services</h2>
         <p>
-          The app may use third-party services such as Supabase for storage and database infrastructure, Reap for user-directed video clipping and publish workflows, and TikTok for authorized publishing workflows. These providers process data according to their own terms and privacy policies.
+          The app may use third-party services such as Cloudflare R2 for storage, Supabase for database infrastructure, Reap for user-directed video clipping and publish workflows, and TikTok for authorized publishing workflows. These providers process data according to their own terms and privacy policies.
         </p>
 
         <h2 className="font-[family-name:var(--font-display)] text-2xl font-black tracking-[-0.04em] text-white">Sharing</h2>

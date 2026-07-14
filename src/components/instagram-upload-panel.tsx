@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { InstagramAccountSelector } from "@/components/instagram-account-selector";
 import { StatusBadge } from "@/components/status-badge";
+import { formatDate } from "@/lib/format";
 
 type UploadTargetSummary = {
   id: string;
@@ -28,13 +29,6 @@ type UploadResult = {
   mediaId?: string;
   error?: string;
 };
-
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
 
 export function InstagramUploadPanel({
   clipId,

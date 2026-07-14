@@ -7,10 +7,6 @@ import { manualLoginRequestSchema } from "@/lib/api/validation";
 import { verifyPassword } from "@/lib/password";
 import { prisma } from "@/lib/prisma";
 
-function getEnv(firstName: string, fallbackName?: string) {
-  return process.env[firstName] || (fallbackName ? process.env[fallbackName] : undefined);
-}
-
 function getProviders() {
   const providers: NextAuthOptions["providers"] = [
     CredentialsProvider({
@@ -49,10 +45,10 @@ function getProviders() {
       },
     }),
   ];
-  const googleClientId = getEnv("AUTH_GOOGLE_ID", "GOOGLE_CLIENT_ID");
-  const googleClientSecret = getEnv("AUTH_GOOGLE_SECRET", "GOOGLE_CLIENT_SECRET");
-  const githubClientId = getEnv("AUTH_GITHUB_ID", "GITHUB_ID");
-  const githubClientSecret = getEnv("AUTH_GITHUB_SECRET", "GITHUB_SECRET");
+  const googleClientId = process.env.AUTH_GOOGLE_ID;
+  const googleClientSecret = process.env.AUTH_GOOGLE_SECRET;
+  const githubClientId = process.env.AUTH_GITHUB_ID;
+  const githubClientSecret = process.env.AUTH_GITHUB_SECRET;
 
   if (googleClientId && googleClientSecret) {
     providers.push(

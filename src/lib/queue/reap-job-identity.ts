@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-function formatUuidFromHash(seed: string) {
+export function formatUuidFromHash(seed: string) {
   const bytes = Buffer.from(createHash("sha256").update(seed).digest("hex").slice(0, 32), "hex");
 
   bytes[6] = (bytes[6] & 0x0f) | 0x50;

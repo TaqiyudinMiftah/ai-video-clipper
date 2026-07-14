@@ -12,8 +12,8 @@ test("explains Supabase storage size limit errors", () => {
     }),
   );
 
-  assert.match(message, /Supabase Storage rejected this video/);
-  assert.match(message, /global file size limit/);
+  assert.match(message, /Cloudflare R2 Storage rejected this video/);
+  assert.match(message, /bucket file size limit/);
 });
 
 test("keeps non-size storage error details", () => {

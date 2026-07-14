@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createClient } from "@supabase/supabase-js";
+import { HeadBucketCommand, S3Client } from "@aws-sdk/client-s3";
 import { requireReapApiKey } from "../src/lib/reap/config";
 import { getIntegrations } from "../src/lib/reap/api";
 
@@ -17,41 +17,41 @@ function printResult(result: CheckResult) {
   console.log(`${result.ok ? "OK" : "TODO"} ${result.name}: ${result.message}`);
 }
 
-async function checkSupabase(): Promise<CheckResult> {
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const bucket = process.env.SUPABASE_STORAGE_BUCKET || "clips";
+async function checkR2Storage(): Promise<CheckResult> {
+  const accountId = process.env.CLOUDFLARE_R2_ACCOUNT_ID ?? "";
+  const accessKeyId = process.env.CLOUDFLARE_R2_ACCESS_KEY_ID ?? "";
+  const secretAccessKey = process.env.CLOUDFLARE_R2_SECRET_ACCESS_KEY ?? "";
+  const bucket = process.env.CLOUDFLARE_R2_BUCKET || "ai-video-clipper";
 
-  if (!hasValue(supabaseUrl) || !hasValue(serviceRoleKey)) {
+  if (!accountId || !accessKeyId || !secretAccessKey) {
     return {
-      name: "Supabase Storage",
+      name: "Cloudflare R2 Storage",
       ok: false,
-      message: "Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.",
+      message:
+        "Set CLOUDFLARE_R2_ACCOUNT_ID, CLOUDFLARE_R2_ACCESS_KEY_ID, and CLOUDFLARE_R2_SECRET_ACCESS_KEY in .env.",
     };
   }
 
-  const supabase = createClient(supabaseUrl!, serviceRoleKey!, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
+  const client = new S3Client({
+    region: "auto",
+    endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+    credentials: { accessKeyId, secretAccessKey },
   });
 
-  const { data, error } = await supabase.storage.getBucket(bucket);
-
-  if (error) {
+  try {
+    await client.send(new HeadBucketCommand({ Bucket: bucket }));
     return {
-      name: "Supabase Storage",
+      name: "Cloudflare R2 Storage",
+      ok: true,
+      message: `Bucket "${bucket}" is reachable.`,
+    };
+  } catch (error) {
+    return {
+      name: "Cloudflare R2 Storage",
       ok: false,
-      message: `Could not read bucket "${bucket}": ${error.message}`,
+      message: `Could not reach bucket "${bucket}": ${error instanceof Error ? error.message : "Unknown error"}.`,
     };
   }
-
-  return {
-    name: "Supabase Storage",
-    ok: true,
-    message: `Bucket "${data.name}" is reachable and ${data.public ? "public" : "private"}.`,
-  };
 }
 
 async function checkReapApiKey(): Promise<CheckResult> {
@@ -113,7 +113,7 @@ async function checkReapIntegration(): Promise<CheckResult> {
 
 async function main() {
   const results = await Promise.allSettled([
-    checkSupabase(),
+    checkR2Storage(),
     checkReapApiKey(),
     checkReapIntegration(),
   ]);

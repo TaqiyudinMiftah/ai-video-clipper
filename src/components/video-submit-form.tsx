@@ -267,13 +267,11 @@ type PreparedSource =
       sourceUrl: string;
       thumbnailUrl: string | null;
       title: string;
-      platform: string;
     }
   | {
       type: "file";
       sourceFile: File;
       title: string;
-      platform: string;
     };
 
 type ApiResult = {
@@ -471,9 +469,7 @@ function PresetCard({
           className={`w-3 h-3 rounded-full border shrink-0 flex items-center justify-center ${selected ? "border-[#38bdf8]" : "border-[#7a8090]"}`}
         >
           {selected && (
-            <div
-              className="w-1.5 h-1.5 rounded-full bg-[#38bdf8]"
-            />
+            <div className="w-1.5 h-1.5 rounded-full bg-[#38bdf8]" />
           )}
         </div>
         <span
@@ -500,9 +496,7 @@ function SelectField({
 }) {
   return (
     <div>
-      <label
-        className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold text-muted-foreground mb-2 block text-[#7a8090]"
-      >
+      <label className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold text-muted-foreground mb-2 block text-[#7a8090]">
         {label}
       </label>
       <select
@@ -532,9 +526,7 @@ function NumberField({
 }) {
   return (
     <div>
-      <label
-        className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold mb-2 block text-[#7a8090]"
-      >
+      <label className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold mb-2 block text-[#7a8090]">
         {label}
       </label>
       <input
@@ -565,7 +557,7 @@ const PIPELINE_STEPS = [
   },
   {
     label: "Store clips server-side",
-    desc: "Finished clips land in Supabase Storage — never exposed directly to the browser.",
+    desc: "Finished clips land in Cloudflare R2 Storage — never exposed directly to the browser.",
   },
 ];
 
@@ -584,7 +576,6 @@ export function VideoSubmitForm({
   const [videoUrl, setVideoUrl] = useState("");
   const [fileName, setFileName] = useState("");
   const [title, setTitle] = useState("");
-  const [platform, setPlatform] = useState("tiktok");
   const [dragging, setDragging] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -735,8 +726,6 @@ export function VideoSubmitForm({
     const hasSourceFile = sourceFile instanceof File && sourceFile.size > 0;
     const sourceUrl = String(formData.get("sourceUrl") ?? "").trim();
     const formTitle = String(formData.get("title") ?? "").trim();
-    const formPlatform = String(formData.get("platform") ?? "tiktok");
-
     setState("submitting");
     setMessage("Preparing source preview...");
     await waitForNextPaint();
@@ -753,7 +742,6 @@ export function VideoSubmitForm({
         type: "file",
         sourceFile,
         title: formTitle,
-        platform: formPlatform,
       });
       setStep("configure");
       setState("idle");
@@ -775,7 +763,6 @@ export function VideoSubmitForm({
       sourceUrl,
       thumbnailUrl: thumbnailReady ? thumbnailUrl : null,
       title: formTitle,
-      platform: formPlatform,
     });
     setStep("configure");
     setState("idle");
@@ -823,7 +810,6 @@ export function VideoSubmitForm({
           fileSize: preparedSource.sourceFile.size,
           contentType: preparedSource.sourceFile.type || null,
           title: preparedSource.title,
-          platform: preparedSource.platform,
         }),
       });
       const createResult = await readJsonResponse(createResponse);
@@ -987,9 +973,7 @@ export function VideoSubmitForm({
               <div className="space-y-5">
                 {/* Video URL */}
                 <div className="bg-[#1e2130] border border-[rgba(255,255,255,0.08)] rounded-lg p-5">
-                  <label
-                    className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold flex items-center gap-2 mb-3 text-[#7a8090]"
-                  >
+                  <label className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold flex items-center gap-2 mb-3 text-[#7a8090]">
                     <span className="text-current">
                       <Link2Icon />
                     </span>
@@ -1003,9 +987,7 @@ export function VideoSubmitForm({
                     placeholder="https://example.com/video.mp4"
                     className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-md px-3 py-2.5 text-sm text-[#eaedf5] placeholder:text-[#7a8090] focus:outline-none focus:border-[#38bdf8]/50 font-[family-name:var(--font-mono)] transition-colors"
                   />
-                  <p
-                    className="text-[11px] font-[family-name:var(--font-mono)] mt-2 text-[#7a8090]"
-                  >
+                  <p className="text-[11px] font-[family-name:var(--font-mono)] mt-2 text-[#7a8090]">
                     Use a URL, or upload a file below. If both are set, the url
                     wins.
                   </p>
@@ -1013,9 +995,7 @@ export function VideoSubmitForm({
 
                 {/* File upload (drag-drop) */}
                 <div className="bg-[#1e2130] border border-[rgba(255,255,255,0.08)] rounded-lg p-5">
-                  <label
-                    className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold flex items-center gap-2 mb-3 text-[#7a8090]"
-                  >
+                  <label className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold flex items-center gap-2 mb-3 text-[#7a8090]">
                     <span className="text-current">
                       <FileVideoIcon />
                     </span>
@@ -1035,9 +1015,7 @@ export function VideoSubmitForm({
                     onClick={() => fileRef.current?.click()}
                     className={`border-2 border-dashed rounded-lg p-8 flex flex-col items-center justify-center gap-3 cursor-pointer transition-all ${dragging ? "border-[#e8c000] bg-[#e8c00008]" : "border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.02)]"}`}
                   >
-                    <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center bg-[#e8c00015]"
-                    >
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-[#e8c00015]">
                       <span className="text-[#e8c000]">
                         <UploadIcon />
                       </span>
@@ -1047,9 +1025,7 @@ export function VideoSubmitForm({
                         <div className="text-sm font-[family-name:var(--font-mono)] text-[#eaedf5]">
                           {fileName}
                         </div>
-                        <div
-                          className="text-[11px] font-[family-name:var(--font-mono)] mt-0.5 text-[#7a8090]"
-                        >
+                        <div className="text-[11px] font-[family-name:var(--font-mono)] mt-0.5 text-[#7a8090]">
                           Click to replace
                         </div>
                       </div>
@@ -1058,9 +1034,7 @@ export function VideoSubmitForm({
                         <div className="text-sm text-[#eaedf5] font-medium">
                           Drop your video here
                         </div>
-                        <div
-                          className="text-[11px] font-[family-name:var(--font-mono)] mt-0.5 text-[#7a8090]"
-                        >
+                        <div className="text-[11px] font-[family-name:var(--font-mono)] mt-0.5 text-[#7a8090]">
                           or click to browse
                         </div>
                       </div>
@@ -1088,9 +1062,7 @@ export function VideoSubmitForm({
 
                 {/* Working title */}
                 <div className="bg-[#1e2130] border border-[rgba(255,255,255,0.08)] rounded-lg p-5">
-                  <label
-                    className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold flex items-center gap-2 mb-3 text-[#7a8090]"
-                  >
+                  <label className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold flex items-center gap-2 mb-3 text-[#7a8090]">
                     <span className="text-current">
                       <TagIcon />
                     </span>
@@ -1104,88 +1076,9 @@ export function VideoSubmitForm({
                     placeholder="Podcast ep. 17, launch webinar, customer interview…"
                     className="w-full bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-md px-3 py-2.5 text-sm text-[#eaedf5] placeholder:text-[#7a8090] focus:outline-none focus:border-[#38bdf8]/50 transition-colors"
                   />
-                  <p
-                    className="text-[11px] font-[family-name:var(--font-mono)] mt-2 text-[#7a8090]"
-                  >
+                  <p className="text-[11px] font-[family-name:var(--font-mono)] mt-2 text-[#7a8090]">
                     Internal label — not published to TikTok or Instagram.
                   </p>
-                </div>
-
-                {/* Target Platform */}
-                <div className="bg-[#1e2130] border border-[rgba(255,255,255,0.08)] rounded-lg p-5">
-                  <label
-                    className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold mb-3 block text-[#7a8090]"
-                  >
-                    Target Platform
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    {[
-                      {
-                        id: "tiktok",
-                        label: "TikTok",
-                        color: NAV_BLUE,
-                        sub: "Publish via TikTok API",
-                        activeBorderClass: "border-[#38bdf8]",
-                        activeBgClass: "bg-[#38bdf810]",
-                        dotClass: "bg-[#38bdf8]",
-                        textClass: "text-[#38bdf8]",
-                      },
-                      {
-                        id: "instagram",
-                        label: "Instagram",
-                        color: NAV_YELLOW,
-                        sub: "Reels via Content Publishing API",
-                        activeBorderClass: "border-[#e8c000]",
-                        activeBgClass: "bg-[#e8c00010]",
-                        dotClass: "bg-[#e8c000]",
-                        textClass: "text-[#e8c000]",
-                      },
-                    ].map(
-                      ({
-                        id,
-                        label,
-                        color,
-                        sub,
-                        activeBorderClass,
-                        activeBgClass,
-                        dotClass,
-                        textClass,
-                      }) => {
-                      const active = platform === id;
-                      return (
-                        <button
-                          key={id}
-                          type="button"
-                          onClick={() => {
-                            setPlatform(id);
-                          }}
-                          className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-left ${active ? `${activeBorderClass} ${activeBgClass}` : "border-[rgba(255,255,255,0.08)]"}`}
-                        >
-                          <div
-                            className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 ${active ? activeBorderClass : "border-[#7a8090]"}`}
-                          >
-                            {active && (
-                              <div
-                                className={`w-2 h-2 rounded-full ${dotClass}`}
-                              />
-                            )}
-                          </div>
-                          <div>
-                            <div
-                              className={`text-sm font-medium ${active ? textClass : "text-[#eaedf5]"}`}
-                            >
-                              {label}
-                            </div>
-                            <div
-                              className="text-[10px] font-[family-name:var(--font-mono)] mt-0.5 text-[#7a8090]"
-                            >
-                              {sub}
-                            </div>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
                 </div>
 
                 {/* CTA */}
@@ -1218,9 +1111,7 @@ export function VideoSubmitForm({
           {step === "configure" && (
             <>
               {/* Source summary */}
-              <div
-                className="bg-[#1e2130] border rounded-lg p-4 flex items-center gap-4 border-[#e8c00030]"
-              >
+              <div className="bg-[#1e2130] border rounded-lg p-4 flex items-center gap-4 border-[#e8c00030]">
                 {preparedSource?.type === "url" &&
                 preparedSource.thumbnailUrl ? (
                   <div className="w-16 h-10 rounded-lg overflow-hidden shrink-0 border border-white/10 bg-black/40">
@@ -1232,9 +1123,7 @@ export function VideoSubmitForm({
                     />
                   </div>
                 ) : (
-                  <div
-                    className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-[#e8c00015]"
-                  >
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 bg-[#e8c00015]">
                     <span className="text-[#e8c000]">
                       <FileVideoIcon />
                     </span>
@@ -1244,9 +1133,7 @@ export function VideoSubmitForm({
                   <div className="text-sm font-medium text-[#eaedf5] truncate">
                     {preparedSource?.title || title || "Untitled video"}
                   </div>
-                  <div
-                    className="text-[11px] font-[family-name:var(--font-mono)] mt-0.5 truncate text-[#7a8090]"
-                  >
+                  <div className="text-[11px] font-[family-name:var(--font-mono)] mt-0.5 truncate text-[#7a8090]">
                     {preparedSource?.type === "file"
                       ? preparedSource?.sourceFile?.name ||
                         fileName ||
@@ -1367,9 +1254,7 @@ export function VideoSubmitForm({
                   />
                 </div>
                 <div>
-                  <label
-                    className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold mb-3 block text-[#7a8090]"
-                  >
+                  <label className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold mb-3 block text-[#7a8090]">
                     Auto Clip Length
                   </label>
                   <div className="grid grid-cols-4 gap-2">
@@ -1412,9 +1297,7 @@ export function VideoSubmitForm({
 
               {/* Video Genre */}
               <div className="bg-[#1e2130] border border-[rgba(255,255,255,0.08)] rounded-lg p-5 space-y-3">
-                <label
-                  className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold block text-[#7a8090]"
-                >
+                <label className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold block text-[#7a8090]">
                   Select Video Genre
                 </label>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -1437,9 +1320,7 @@ export function VideoSubmitForm({
               {/* Caption Styles */}
               <div className="bg-[#1e2130] border border-[rgba(255,255,255,0.08)] rounded-lg p-5 space-y-4">
                 <div className="flex items-center justify-between">
-                  <label
-                    className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold text-[#7a8090]"
-                  >
+                  <label className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold text-[#7a8090]">
                     Caption Styles
                   </label>
                   <ToggleSwitch
@@ -1502,15 +1383,11 @@ export function VideoSubmitForm({
               {/* Clip Topics */}
               <div className="bg-[#1e2130] border border-[rgba(255,255,255,0.08)] rounded-lg p-5 space-y-3">
                 <div>
-                  <label
-                    className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold block mb-0.5 text-[#7a8090]"
-                  >
+                  <label className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold block mb-0.5 text-[#7a8090]">
                     Clip Topics{" "}
                     <span className="normal-case opacity-60">(optional)</span>
                   </label>
-                  <p
-                    className="text-[11px] font-[family-name:var(--font-mono)] text-[#7a8090]"
-                  >
+                  <p className="text-[11px] font-[family-name:var(--font-mono)] text-[#7a8090]">
                     Add keywords to guide what AI should clip, separated by
                     commas.
                   </p>
@@ -1525,9 +1402,7 @@ export function VideoSubmitForm({
               </div>
 
               {/* Toggles */}
-              <div
-                className="bg-[#1e2130] border border-[rgba(255,255,255,0.08)] rounded-lg overflow-hidden divide-y border-[rgba(255,255,255,0.08)]"
-              >
+              <div className="bg-[#1e2130] border border-[rgba(255,255,255,0.08)] rounded-lg overflow-hidden divide-y border-[rgba(255,255,255,0.08)]">
                 {[
                   {
                     label: "Auto Text Hooks",
@@ -1556,16 +1431,12 @@ export function VideoSubmitForm({
                           {label}
                         </span>
                         {beta && (
-                          <span
-                            className="text-[9px] font-[family-name:var(--font-mono)] font-bold px-1.5 py-0.5 rounded bg-[rgba(255,255,255,0.08)] text-[#7a8090]"
-                          >
+                          <span className="text-[9px] font-[family-name:var(--font-mono)] font-bold px-1.5 py-0.5 rounded bg-[rgba(255,255,255,0.08)] text-[#7a8090]">
                             BETA
                           </span>
                         )}
                       </div>
-                      <p
-                        className="text-[11px] font-[family-name:var(--font-mono)] mt-0.5 text-[#7a8090]"
-                      >
+                      <p className="text-[11px] font-[family-name:var(--font-mono)] mt-0.5 text-[#7a8090]">
                         {desc}
                       </p>
                     </div>
@@ -1617,68 +1488,48 @@ export function VideoSubmitForm({
         {/* ── Right: Guardrails Panel ── */}
         <div className="space-y-4">
           {/* How it works */}
-          <div
-            className="rounded-lg p-5 border bg-[#1e2130] border-[#e8c00020]"
-          >
+          <div className="rounded-lg p-5 border bg-[#1e2130] border-[#e8c00020]">
             <div className="flex items-center gap-2 mb-1">
               <span className="text-[#e8c000]">
                 <AlertCircleIcon />
               </span>
-              <span
-                className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold text-[#e8c000]"
-              >
+              <span className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold text-[#e8c000]">
                 How it works
               </span>
             </div>
             <h3 className="text-base font-bold text-[#eaedf5] mt-1 mb-3">
               AI Processing Pipeline
             </h3>
-            <p
-              className="text-[12px] font-[family-name:var(--font-mono)] leading-relaxed text-[#7a8090]"
-            >
+            <p className="text-[12px] font-[family-name:var(--font-mono)] leading-relaxed text-[#7a8090]">
               Your video is clipped server-side by AI — clips are stored in
-              Supabase Storage and never exposed directly to the browser.
+              Cloudflare R2 Storage and never exposed directly to the browser.
               Publishing goes through Composio into TikTok or Instagram Reels.
             </p>
           </div>
 
           {/* Pipeline Steps */}
-          <div
-            className="rounded-lg border overflow-hidden bg-[#1e2130] border-[rgba(255,255,255,0.06)]"
-          >
-            <div
-              className="px-5 py-3 border-b border-[rgba(255,255,255,0.06)]"
-            >
-              <span
-                className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold text-[#7a8090]"
-              >
+          <div className="rounded-lg border overflow-hidden bg-[#1e2130] border-[rgba(255,255,255,0.06)]">
+            <div className="px-5 py-3 border-b border-[rgba(255,255,255,0.06)]">
+              <span className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold text-[#7a8090]">
                 Pipeline Steps
               </span>
             </div>
-            <div
-              className="divide-y border-[rgba(255,255,255,0.04)]"
-            >
+            <div className="divide-y border-[rgba(255,255,255,0.04)]">
               {PIPELINE_STEPS.map(({ label, desc }, i) => (
                 <div key={label} className="flex gap-4 px-5 py-4">
                   <div className="flex flex-col items-center gap-1 shrink-0">
-                    <div
-                      className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-[family-name:var(--font-mono)] font-bold bg-[#22c55e20] text-[#22c55e]"
-                    >
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-[family-name:var(--font-mono)] font-bold bg-[#22c55e20] text-[#22c55e]">
                       {i + 1}
                     </div>
                     {i < PIPELINE_STEPS.length - 1 && (
-                      <div
-                        className="w-px flex-1 min-h-3 bg-[rgba(34,197,94,0.15)]"
-                      />
+                      <div className="w-px flex-1 min-h-3 bg-[rgba(34,197,94,0.15)]" />
                     )}
                   </div>
                   <div className="pb-1">
                     <div className="text-xs font-semibold text-[#eaedf5]">
                       {label}
                     </div>
-                    <div
-                      className="text-[11px] font-[family-name:var(--font-mono)] mt-1 leading-relaxed text-[#7a8090]"
-                    >
+                    <div className="text-[11px] font-[family-name:var(--font-mono)] mt-1 leading-relaxed text-[#7a8090]">
                       {desc}
                     </div>
                   </div>
@@ -1688,12 +1539,8 @@ export function VideoSubmitForm({
           </div>
 
           {/* Supported formats */}
-          <div
-            className="rounded-lg p-4 border bg-[#1e2130] border-[rgba(255,255,255,0.06)]"
-          >
-            <span
-              className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold block mb-3 text-[#7a8090]"
-            >
+          <div className="rounded-lg p-4 border bg-[#1e2130] border-[rgba(255,255,255,0.06)]">
+            <span className="text-[10px] font-[family-name:var(--font-mono)] uppercase tracking-[0.25em] font-bold block mb-3 text-[#7a8090]">
               Supported Formats
             </span>
             <div className="flex flex-wrap gap-2">
@@ -1709,17 +1556,13 @@ export function VideoSubmitForm({
                   <span className="text-xs font-[family-name:var(--font-mono)] font-bold text-[#eaedf5]">
                     {fmt}
                   </span>
-                  <span
-                    className="text-[10px] font-[family-name:var(--font-mono)] text-[#7a8090]"
-                  >
+                  <span className="text-[10px] font-[family-name:var(--font-mono)] text-[#7a8090]">
                     · {note}
                   </span>
                 </div>
               ))}
             </div>
-            <p
-              className="text-[11px] font-[family-name:var(--font-mono)] mt-3 text-[#7a8090]"
-            >
+            <p className="text-[11px] font-[family-name:var(--font-mono)] mt-3 text-[#7a8090]">
               Max file size: 4 GB. Min duration: 5 seconds.
             </p>
           </div>

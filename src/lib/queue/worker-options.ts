@@ -1,14 +1,10 @@
 import type { WorkerOptions } from "bullmq";
+import { getPositiveIntegerEnv } from "@/lib/env";
 
 export const DEFAULT_BULLMQ_DRAIN_DELAY_SECONDS = 300;
 export const DEFAULT_BULLMQ_STALLED_INTERVAL_MS = 300_000;
 export const DEFAULT_BULLMQ_WORKER_COUNT = 5;
 export const BULLMQ_DELAYED_JOB_MAX_BLOCK_SECONDS = 10;
-
-function getPositiveIntegerEnv(name: string, fallback: number) {
-  const value = Number(process.env[name]);
-  return Number.isInteger(value) && value > 0 ? value : fallback;
-}
 
 export function getBullMqWorkerMaintenanceOptions(): Pick<
   WorkerOptions,

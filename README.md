@@ -78,11 +78,10 @@ This repository is through **Phase 8** (all Reap migration complete):
 
 8. Configure storage:
 
-   - Create a private Supabase Storage bucket, for example `clips`.
-   - Set `STORAGE_PROVIDER=supabase`.
-   - Set `SUPABASE_URL`.
-   - Set `SUPABASE_SERVICE_ROLE_KEY` server-side only. Never expose it to the browser.
-   - Set `SUPABASE_STORAGE_BUCKET=clips` or your chosen bucket name.
+   - Create a private Cloudflare R2 bucket, for example `ai-video-clipper`.
+   - Set `CLOUDFLARE_R2_ACCOUNT_ID`, `CLOUDFLARE_R2_ACCESS_KEY_ID`, `CLOUDFLARE_R2_SECRET_ACCESS_KEY` (server-side only, never expose to the browser).
+   - Set `CLOUDFLARE_R2_BUCKET=ai-video-clipper` or your chosen bucket name.
+   - Set `CLOUDFLARE_R2_PUBLIC_URL` to the bucket's public URL.
 
 9. Configure Reap:
 
@@ -235,7 +234,7 @@ npm run staging:smoke
 - `Clip must have a storage path`: the clip has not been stored yet. Confirm the Reap worker or webhook processed the project successfully.
 - `Clip must have a Reap clip ID`: the clip was created before the Reap migration. Re-process the video to get Reap clip IDs.
 - `No active TikTok integration found`: connect your TikTok account at `https://reap.video/settings/integrations`.
-- `SUPABASE_SERVICE_ROLE_KEY is required for storage operations`: set Supabase server-side storage env vars and never expose the service role key to frontend code.
+- `CLOUDFLARE_R2_SECRET_ACCESS_KEY is required for storage operations`: set Cloudflare R2 server-side storage env vars and never expose the secret access key to frontend code.
 - `Reap project failed`: check the video's `errorMessage` field and Reap dashboard for processing status.
 - `EPERM` while running `next build` on Windows: stop any running Next dev/build process and rerun the build so `.next` files can be cleaned.
 - Upload keeps failing after retries: inspect `upload_targets.error_message`, `logs`, and the Reap dashboard connection state.

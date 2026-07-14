@@ -71,7 +71,7 @@ export default async function IntegrationsPage() {
           <p className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#dffe00]">Ready</p>
           <h2 className="mt-4 font-[family-name:var(--font-display)] text-3xl font-black tracking-[-0.04em] text-white">Storage Provider</h2>
           <p className="mt-4 leading-7 text-[#c6c9ab]">
-            Server-side uploads use Supabase Storage. Cloudflare R2 can be added behind the same storage interface later.
+            Server-side uploads use Cloudflare R2 Storage.
           </p>
         </article>
 

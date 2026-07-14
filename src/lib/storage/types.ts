@@ -1,5 +1,3 @@
-export type StorageProvider = "supabase" | "cloudflare-r2";
-
 export type UploadFileInput = {
   path: string;
   file: Blob | ArrayBuffer | Uint8Array | Buffer;

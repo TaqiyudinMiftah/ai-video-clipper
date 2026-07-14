@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type Redis from "ioredis";
+import { getPositiveNumberEnv } from "@/lib/env";
 import { createQueueRedisConnection } from "@/lib/queue/redis";
 
 const DEFAULT_REAP_RATE_LIMIT_MAX_REQUESTS = 10;
@@ -9,11 +10,6 @@ const RATE_LIMIT_KEY_PREFIX = "ai-video-clipper:reap:rate-limit";
 let redis: Redis | null = null;
 let warnedAboutRedisFallback = false;
 let localRequestTimestamps: number[] = [];
-
-function getPositiveNumberEnv(name: string, fallback: number) {
-  const value = Number(process.env[name]);
-  return Number.isFinite(value) && value > 0 ? value : fallback;
-}
 
 function getMaxRequests() {
   return getPositiveNumberEnv("REAP_RATE_LIMIT_MAX_REQUESTS", DEFAULT_REAP_RATE_LIMIT_MAX_REQUESTS);
