@@ -1,6 +1,6 @@
 # AI Automation Video Clipper
 
-MVP web application for submitting source videos, processing them into short clips via the Reap API, reviewing generated clips, and publishing directly to TikTok through Reap's built-in integrations.
+MVP web application for submitting source videos, processing them into short clips via the Reap API, reviewing generated clips, and publishing them to multiple platforms: **TikTok** (via Reap's built-in integrations) and **YouTube Shorts & Instagram Reels** (via Composio).
 
 This repository is through **Phase 8** (all Reap migration complete):
 
@@ -12,16 +12,27 @@ This repository is through **Phase 8** (all Reap migration complete):
 - Dashboard, video ledger, and integration pages
 - Reap API client for clip creation and TikTok publishing
 - BullMQ workers: Reap processing, delayed polling fallback, clip download, and TikTok publish
-- Supabase-backed storage abstraction for source videos and clips
+- Cloudflare R2 storage abstraction for source videos and clips (downloads use presigned S3 GET URLs)
 - Webhook receiver for Reap project completion callbacks
 - Structured logging, retry controls, worker health check, and troubleshooting notes
 
+This repository now also supports **YouTube Shorts and Instagram Reels uploads via Composio**, with a generalized multi-account `SocialAccount` model (TikTok still uses the Reap Publish API).
+
 ## Requirements
+
+**Local runtime:**
 
 - Node.js 20+ (Node 24 is fine)
 - npm
 - PostgreSQL
 - Redis
+
+**External service accounts (API keys / credentials):**
+
+- **Reap** — clip generation and TikTok publishing (see [Reap Setup](#reap-setup))
+- **Cloudflare R2** — object storage for source videos and clips (see step 8 in [Local Setup](#local-setup))
+- **Composio** — YouTube Shorts and Instagram Reels uploads (see [Composio Setup (YouTube & Instagram)](#composio-setup-youtube--instagram))
+- **OAuth provider** — Google and/or GitHub for production auth (see step 7 in [Local Setup](#local-setup))
 
 ## Local Setup
 
@@ -163,6 +174,41 @@ This repository is through **Phase 8** (all Reap migration complete):
    REAP_DEFAULT_LANGUAGE=en
    ```
 
+## Composio Setup (YouTube & Instagram)
+
+TikTok publishing goes through Reap. YouTube Shorts and Instagram Reels are
+uploaded synchronously through [Composio](https://composio.dev).
+
+1. Get a Composio API key and set server-side env vars:
+
+   ```bash
+   COMPOSIO_API_KEY=your_composio_api_key
+   COMPOSIO_BASE_URL=https://backend.composio.dev
+   COMPOSIO_INSTAGRAM_AUTH_CONFIG_ID=your_instagram_auth_config_id
+   ```
+
+2. Connect a social account from the app UI. The flow is
+   `connect → callback → sync`, handled by the routes under
+   `src/app/api/composio/{instagram,youtube}/`. Connected accounts are stored
+   in the generalized `SocialAccount` model (`platformUserId` /
+   `platformUsername`), and multiple accounts per platform are supported.
+
+3. Upload behavior:
+
+   - **Instagram**: Composio fetches the clip from a public video URL.
+   - **YouTube**: the raw video bytes are downloaded from R2 and staged to
+     Composio S3 (YouTube cannot accept a URL). See
+     `src/lib/composio/youtube-upload.ts`. Default privacy status is `public`.
+
+4. Storage note: the app downloads clips from R2 using a **presigned S3 GET
+   URL** (targets `*.r2.cloudflarestorage.com`). The public `r2.dev` URL sits
+   behind Cloudflare bot protection and fails for server-side downloads.
+
+5. Dev-only clock workaround: if your machine clock is skewed and R2's TLS
+   certificate is rejected with `CERT_HAS_EXPIRED`, set
+   `COMPOSIO_ALLOW_INSECURE_TLS=true`. This disables TLS verification for the
+   R2 download **only** and must **never** be enabled in production.
+
 ## Webhook Setup (Recommended)
 
 Reap sends webhooks when projects complete. For production:
@@ -225,6 +271,9 @@ npm run worker:health
 npm run setup:check
 npm run production:check
 npm run staging:smoke
+
+# Reset clips/upload targets stuck in "uploading" after a crashed IG/YouTube upload
+tsx -r dotenv/config scripts/reset-stuck-uploads.ts
 ```
 
 ## Troubleshooting
@@ -238,6 +287,10 @@ npm run staging:smoke
 - `Reap project failed`: check the video's `errorMessage` field and Reap dashboard for processing status.
 - `EPERM` while running `next build` on Windows: stop any running Next dev/build process and rerun the build so `.next` files can be cleaned.
 - Upload keeps failing after retries: inspect `upload_targets.error_message`, `logs`, and the Reap dashboard connection state.
+- Upload button stuck on "uploading" after a crash: a synchronous IG/YouTube upload died mid-flight, leaving a non-terminal `UploadTarget` (the 409 guard then blocks retries). Run `tsx -r dotenv/config scripts/reset-stuck-uploads.ts`.
+- YouTube/Instagram upload fails: verify the Composio connection via `/api/composio/{instagram,youtube}/accounts` and confirm `COMPOSIO_API_KEY` is set.
+- `CERT_HAS_EXPIRED` when downloading from R2 in local dev: your machine clock is likely skewed past the certificate's validity window. Set `COMPOSIO_ALLOW_INSECURE_TLS=true` in `.env.local` (dev only). Never set it in production.
+- `403` with a "Just a moment..." body when downloading a clip: that is Cloudflare's bot challenge on the public `r2.dev` URL. The app avoids it by using a presigned S3 GET URL; if it recurs, verify the `CLOUDFLARE_R2_*` credentials.
 
 ## Architecture
 
@@ -254,9 +307,11 @@ Reap Processing Worker → Reap API → Clip creation
   ↓
 Webhook Handler or Polling Worker → Download clips
   ↓
-Storage (Supabase/Cloudflare R2)
+Storage (Cloudflare R2, presigned S3 GET)
   ↓
 Reap Publish Worker → Reap API → TikTok
+  ↓
+Upload Route → Composio API → YouTube Shorts / Instagram Reels
 ```
 
 ## Phase Notes
@@ -271,7 +326,10 @@ Reap Publish Worker → Reap API → TikTok
 - `npm run worker:reap-download` downloads and stores completed project clips for both webhook and polling paths.
 - `/videos/:id` shows clip previews and editable title, caption, and hashtag metadata when clip rows exist.
 - `POST /api/clips/:id/generate-caption` uses a safe placeholder caption service. If `OPENAI_API_KEY` is missing, it returns and stores a clear placeholder response instead of calling an external API.
-- `POST /api/clips/:id/upload` validates the clip has a Reap clip ID, creates an `UploadTarget`, and queues a TikTok publish job.
+- `POST /api/clips/:id/upload` accepts `platform` of `tiktok`, `instagram`, or `youtube`.
+  - `tiktok`: validates the clip has a Reap clip ID, creates an `UploadTarget`, and queues a TikTok publish job (BullMQ/Reap).
+  - `instagram` / `youtube`: uploads synchronously via Composio for each `connectedAccountIds` entry (one `UploadTarget` per account, processed sequentially).
+- `scripts/reset-stuck-uploads.ts` fails non-terminal `UploadTarget` rows and reconciles clips stuck in `uploading` after a crashed synchronous (IG/YouTube) upload. Run it with `tsx -r dotenv/config scripts/reset-stuck-uploads.ts`. TikTok BullMQ uploads are left untouched.
 - `npm run worker:reap-publish` starts the dedicated Reap TikTok publish worker with default concurrency `1`.
 - `npm run worker:reap-publish-status` polls Reap post status after TikTok publishing has started.
 - The publish worker retries failed TikTok uploads up to 3 attempts with a 5 minute fixed delay.
@@ -471,3 +529,5 @@ Set `VERCEL_PROTECTION_BYPASS` when Vercel Deployment Protection is enabled.
 - Webhook URL: configure a stable HTTPS webhook endpoint for Reap callbacks.
 - Staging validation: run `npm run staging:smoke`, then one real URL submission through Reap before production traffic.
 - TikTok integration monitoring: periodically verify the TikTok connection in Reap dashboard remains active.
+- Composio integration monitoring: verify YouTube/Instagram connections stay active before publishing; keep `COMPOSIO_API_KEY` server-side only.
+- Never enable `COMPOSIO_ALLOW_INSECURE_TLS` in production — it is a dev-only clock workaround that disables TLS verification for the R2 download.

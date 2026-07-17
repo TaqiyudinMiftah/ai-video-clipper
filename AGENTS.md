@@ -82,7 +82,29 @@ For clip generation and TikTok publishing:
 - Use webhooks for project status tracking when possible; polling as fallback.
 - Store upload status in database.
 - Handle upload failure and retry.
-- Keep YouTube and Instagram out of MVP unless explicitly requested.
+- TikTok publishing uses the Reap Publish API via a BullMQ worker
+  (`enqueueClipUploadJob` in `src/lib/queue/`) — keep this path separate
+  from the synchronous Composio paths below.
+
+## Social Platform Integrations
+
+Upload targets are generalized across platforms. `SocialAccount` stores
+`platformUserId` / `platformUsername` (not IG-specific fields) so multiple
+platforms share one model.
+
+- TikTok: queued via BullMQ → Reap (see Reap Rules above).
+- Instagram & YouTube: uploaded synchronously inside the upload route via
+  Composio. Keep Composio client code modular in `src/lib/composio/`.
+- YouTube needs the raw video bytes staged to Composio S3
+  (`src/lib/composio/youtube-upload.ts`) — it cannot accept a URL like
+  Instagram. Download from R2 via a presigned S3 GET; the public `r2.dev`
+  URL sits behind Cloudflare bot protection and fails server-side.
+- Multi-account: the upload route creates one `UploadTarget` per
+  `connectedAccountIds` entry and processes them sequentially.
+- Never hardcode the Composio API key; read `COMPOSIO_API_KEY` from env.
+- Dev clock workaround: `COMPOSIO_ALLOW_INSECURE_TLS=true` disables TLS
+  verification for the R2 download ONLY (dev machines with a wrong system
+  clock). Never enable in production.
 
 ## Testing Rules
 
