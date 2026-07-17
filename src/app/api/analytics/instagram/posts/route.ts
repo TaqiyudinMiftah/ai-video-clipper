@@ -36,9 +36,9 @@ export async function GET(request: Request) {
   }
 
   const entityId = socialAccount.connectedId;
-  const igUserId = socialAccount.igUserId;
+  const platformUserId = socialAccount.platformUserId;
 
-  if (!igUserId) {
+  if (!platformUserId) {
     return NextResponse.json(
       { error: "Instagram user ID not found for this account." },
       { status: 400 },
@@ -48,14 +48,14 @@ export async function GET(request: Request) {
   try {
     const posts = await getInstagramRecentPostsWithInsights(
       entityId,
-      igUserId,
+      platformUserId,
       max,
     );
 
     return NextResponse.json({
       account: {
         id: socialAccount.id,
-        username: socialAccount.igUsername,
+        username: socialAccount.platformUsername,
       },
       posts,
       count: posts.length,

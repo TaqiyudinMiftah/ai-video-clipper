@@ -209,8 +209,8 @@ export async function ensureInstagramSnapshot(userId: string): Promise<void> {
   if (!socialAccount) return;
 
   const entityId = socialAccount.connectedId;
-  const igUserId = socialAccount.igUserId;
-  if (!entityId || !igUserId) return;
+  const platformUserId = socialAccount.platformUserId;
+  if (!entityId || !platformUserId) return;
 
-  await takeInstagramSnapshot(socialAccount.id, userId, entityId, igUserId);
+  await takeInstagramSnapshot(socialAccount.id, userId, entityId, platformUserId);
 }

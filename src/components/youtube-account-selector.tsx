@@ -3,27 +3,27 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 
-type InstagramAccount = {
+type YouTubeAccount = {
   id: string;
-  platformUsername: string;
-  platformUserId: string;
+  channelName: string | null;
+  channelId: string | null;
   alias: string | null;
+  isActive: boolean;
+  createdAt: string;
 };
 
-type InstagramAccountSelectorProps = {
+type YouTubeAccountSelectorProps = {
   selectedAccountIds: string[];
   onSelect: (accountIds: string[]) => void;
-  clipId: string;
 };
 
-export function InstagramAccountSelector({
+export function YouTubeAccountSelector({
   selectedAccountIds,
   onSelect,
-  clipId,
-}: InstagramAccountSelectorProps) {
+}: YouTubeAccountSelectorProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [accounts, setAccounts] = useState<InstagramAccount[]>([]);
+  const [accounts, setAccounts] = useState<YouTubeAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isConnecting, setIsConnecting] = useState(false);
@@ -36,7 +36,7 @@ export function InstagramAccountSelector({
   async function fetchAccounts() {
     try {
       setLoading(true);
-      const res = await fetch("/api/composio/instagram/accounts");
+      const res = await fetch("/api/composio/youtube/accounts");
       if (!res.ok) throw new Error("Failed to fetch accounts");
       const data = await res.json();
       setAccounts(data.accounts || []);
@@ -52,15 +52,15 @@ export function InstagramAccountSelector({
     setError("");
 
     try {
-      const res = await fetch("/api/composio/instagram/connect", {
+      const res = await fetch("/api/composio/youtube/connect", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({}),
       });
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Failed to initiate connection");
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.error || "Failed to initiate connection");
       }
 
       const data = await res.json();
@@ -71,7 +71,7 @@ export function InstagramAccountSelector({
 
       const popup = window.open(
         data.redirectUrl,
-        "instagram-oauth",
+        "youtube-oauth",
         "width=600,height=700",
       );
 
@@ -86,7 +86,7 @@ export function InstagramAccountSelector({
       const checkPopup = setInterval(async () => {
         if (popup.closed) {
           clearInterval(checkPopup);
-          await syncAccount(data.entityId);
+          await syncAccount(data.entityId, data.connectedAccountId);
         }
       }, 1000);
     } catch (err: any) {
@@ -95,22 +95,23 @@ export function InstagramAccountSelector({
     }
   }
 
-  async function syncAccount(entityId?: string) {
+  async function syncAccount(
+    entityId?: string,
+    connectedAccountId?: string,
+  ) {
     setError("");
 
     try {
-      const res = await fetch("/api/composio/instagram/sync", {
+      const res = await fetch("/api/composio/youtube/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entityId }),
+        body: JSON.stringify({ entityId, connectedAccountId }),
       });
 
       const data = await res.json();
 
       if (data.status === "pending") {
-        setError(
-          "Authorization still pending. Please try again in a moment.",
-        );
+        setError("Authorization still pending. Please try again in a moment.");
         return;
       }
 
@@ -124,23 +125,23 @@ export function InstagramAccountSelector({
     }
   }
 
-  async function disconnectAccount(accountId: string, username: string) {
-    if (!confirm(`Disconnect @${username} from Instagram?`)) return;
+  async function disconnectAccount(accountId: string, alias: string) {
+    if (!confirm(`Disconnect "${alias || "YouTube account"}"?`)) return;
 
     setDisconnectingId(accountId);
     setError("");
 
     try {
-      const res = await fetch(`/api/composio/instagram/accounts?id=${accountId}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/composio/youtube/accounts?id=${accountId}`,
+        { method: "DELETE" },
+      );
 
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to disconnect account");
       }
 
-      // Remove from selection if it was selected
       if (selectedAccountIds.includes(accountId)) {
         onSelect(selectedAccountIds.filter((id) => id !== accountId));
       }
@@ -165,7 +166,7 @@ export function InstagramAccountSelector({
     return (
       <div className="flex items-center gap-2 text-sm text-[#c6c9ab]">
         <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#dffe00] border-t-transparent" />
-        Loading accounts...
+        Loading YouTube accounts...
       </div>
     );
   }
@@ -173,7 +174,7 @@ export function InstagramAccountSelector({
   return (
     <div className="grid gap-2">
       <label className="font-[family-name:var(--font-mono)] text-xs font-bold uppercase leading-4 tracking-[0.25em] text-[#dffe00]">
-        Instagram Accounts
+        YouTube Accounts
       </label>
 
       {accounts.length > 0 ? (
@@ -190,14 +191,17 @@ export function InstagramAccountSelector({
                 className="h-4 w-4 accent-[#dffe00]"
               />
               <span className="flex-1">
-                @{acc.platformUsername}
-                {acc.alias ? ` (${acc.alias})` : ""}
+                {acc.channelName && acc.channelName !== "unknown"
+                  ? acc.channelName
+                  : acc.alias
+                    ? acc.alias
+                    : `YouTube Account ${acc.id.slice(0, 8)}`}
               </span>
               <button
                 type="button"
                 onClick={(e) => {
                   e.preventDefault();
-                  disconnectAccount(acc.id, acc.platformUsername);
+                  disconnectAccount(acc.id, acc.alias || "YouTube account");
                 }}
                 disabled={disconnectingId === acc.id}
                 className="ml-auto text-xs text-[#ffb4ab] transition hover:text-[#ff8a82] disabled:opacity-50"
@@ -209,7 +213,7 @@ export function InstagramAccountSelector({
         </div>
       ) : (
         <p className="text-sm text-[#c6c9ab]">
-          No Instagram accounts connected yet.
+          No YouTube accounts connected yet.
         </p>
       )}
 
@@ -219,7 +223,7 @@ export function InstagramAccountSelector({
         disabled={isConnecting}
         className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-[rgba(223,254,0,0.30)] bg-[#1e2130] px-4 py-2 font-[family-name:var(--font-mono)] text-xs font-bold uppercase tracking-[0.16em] text-[#dffe00] transition hover:-translate-y-0.5 hover:border-[rgba(223,254,0,0.60)] disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {isConnecting ? "Connecting..." : "+ Connect New Account"}
+        {isConnecting ? "Connecting..." : "+ Connect YouTube Account"}
       </button>
 
       {error ? (

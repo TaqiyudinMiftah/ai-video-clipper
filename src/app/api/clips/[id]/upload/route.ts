@@ -171,7 +171,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 
     const results: Array<{
       accountId: string;
-      igUsername: string;
+      platformUsername: string;
       uploadTargetId: string;
       status: string;
       mediaId?: string;
@@ -183,7 +183,7 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     for (const socialAccount of socialAccounts) {
       const resultEntry: (typeof results)[number] = {
         accountId: socialAccount.id,
-        igUsername: socialAccount.igUsername,
+        platformUsername: socialAccount.platformUsername,
         uploadTargetId: "",
         status: "failed",
       };
@@ -212,15 +212,15 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
         });
 
         const entityId = socialAccount.connectedId;
-        const igUserId = socialAccount.igUserId;
+        const platformUserId = socialAccount.platformUserId;
 
-        if (!igUserId) {
+        if (!platformUserId) {
           throw new Error("Instagram user ID not found for this account.");
         }
 
         const igResult = await uploadInstagramReels({
           entityId,
-          igUserId,
+          igUserId: platformUserId,
           videoUrl: publicVideoUrl,
           caption,
           shareToFeed: true,
@@ -303,6 +303,170 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
     }
 
     // Clean up the initially-created UploadTarget (no longer needed)
+    await prisma.uploadTarget
+      .delete({ where: { id: uploadTarget.id } })
+      .catch(() => {});
+
+    const allFailed = results.every((r) => r.status === "failed");
+    const anySucceeded = results.some((r) => r.status === "completed");
+
+    if (allFailed) {
+      await prisma.clip
+        .update({
+          where: { id: clip.id },
+          data: { status: "ready_to_upload" },
+        })
+        .catch(() => {});
+      return NextResponse.json(
+        { results, error: "All uploads failed." },
+        { status: 503 },
+      );
+    }
+
+    return NextResponse.json({ results }, { status: anySucceeded ? 201 : 503 });
+  }
+
+  // --- YouTube: Direct upload via Composio ---
+  if (platform === "youtube") {
+    const accountIds = parsed.data.connectedAccountIds ?? [];
+
+    if (accountIds.length === 0) {
+      await prisma.uploadTarget
+        .delete({ where: { id: uploadTarget.id } })
+        .catch(() => {});
+      return NextResponse.json(
+        { error: "Select at least one YouTube account before uploading." },
+        { status: 400 },
+      );
+    }
+
+    const socialAccounts = (
+      await Promise.all(
+        accountIds.map((id) => getSocialAccountById(id, user.id)),
+      )
+    ).filter(Boolean) as NonNullable<
+      Awaited<ReturnType<typeof getSocialAccountById>>
+    >[];
+
+    if (socialAccounts.length === 0) {
+      await prisma.uploadTarget
+        .delete({ where: { id: uploadTarget.id } })
+        .catch(() => {});
+      return NextResponse.json(
+        {
+          error:
+            "YouTube accounts not found. Connect your YouTube account first.",
+        },
+        { status: 400 },
+      );
+    }
+
+    // R2's public r2.dev URL sits behind Cloudflare bot protection (it serves a
+    // "Just a moment" JS challenge to server-side clients), so the app cannot
+    // download it directly. Use an authenticated presigned S3 GET URL instead:
+    // it targets the *.r2.cloudflarestorage.com API endpoint, which is NOT
+    // behind that challenge and needs no public access. YouTube requires the
+    // raw bytes (unlike Instagram, which lets Composio fetch a URL), so we must
+    // be able to read the file ourselves.
+    const extension = (clip.storagePath.split(".").pop() ?? "mp4").toLowerCase();
+    const { signedUrl: videoDownloadUrl } =
+      await getStorageService().getSignedUrl(clip.storagePath, 60 * 60);
+
+    const results: Array<{
+      accountId: string;
+      platform: string;
+      uploadTargetId: string;
+      status: string;
+      videoId?: string;
+      error?: string;
+    }> = [];
+
+    for (const socialAccount of socialAccounts) {
+      const resultEntry: (typeof results)[number] = {
+        accountId: socialAccount.id,
+        platform: "youtube",
+        uploadTargetId: "",
+        status: "failed",
+      };
+
+      try {
+        const target = await prisma.uploadTarget.create({
+          data: {
+            clipId: clip.id,
+            userId: user.id,
+            platform: "youtube",
+            socialAccountId: socialAccount.id,
+            uploadStatus: "queued",
+          },
+        });
+        resultEntry.uploadTargetId = target.id;
+
+        await prisma.uploadTarget.update({
+          where: { id: target.id },
+          data: { uploadStatus: "uploading" },
+        });
+
+        await prisma.clip.update({
+          where: { id: clip.id },
+          data: { status: "uploading" },
+        });
+
+        const { uploadYouTubeVideo } =
+          await import("@/lib/composio/youtube-upload");
+        const ytResult = await uploadYouTubeVideo({
+          entityId: socialAccount.connectedId,
+          videoUrl: videoDownloadUrl,
+          videoFilename: `clip-${clip.id}.${extension}`,
+          title: clip.title ?? "Untitled clip",
+          description: clip.caption ?? "",
+          tags: clip.hashtags,
+        });
+
+        if (!ytResult.success) {
+          throw new Error(ytResult.error ?? "YouTube upload failed.");
+        }
+
+        const uploadedUrl = `https://youtube.com/watch?v=${ytResult.videoId}`;
+
+        await prisma.uploadTarget.update({
+          where: { id: target.id },
+          data: {
+            uploadStatus: "completed",
+            uploadedUrl,
+            platformResponse: ytResult,
+            errorMessage: null,
+          },
+        });
+
+        resultEntry.status = "completed";
+        resultEntry.videoId = ytResult.videoId;
+
+        await prisma.clip.update({
+          where: { id: clip.id },
+          data: { status: "uploaded" },
+        });
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "YouTube upload failed.";
+
+        if (resultEntry.uploadTargetId) {
+          await prisma.uploadTarget
+            .update({
+              where: { id: resultEntry.uploadTargetId },
+              data: {
+                uploadStatus: "failed",
+                errorMessage,
+              },
+            })
+            .catch(() => {});
+        }
+
+        resultEntry.error = errorMessage;
+      }
+
+      results.push(resultEntry);
+    }
+
     await prisma.uploadTarget
       .delete({ where: { id: uploadTarget.id } })
       .catch(() => {});

@@ -79,15 +79,15 @@ export async function GET(request: NextRequest) {
       },
     );
 
-    let igUserId = "";
-    let igUsername = "";
+    let platformUserId = "";
+    let platformUsername = "";
 
     if (igInfoResponse.ok) {
       const igData = (await igInfoResponse.json()) as {
         data?: { id?: string; username?: string };
       };
-      igUserId = igData.data?.id ?? "";
-      igUsername = igData.data?.username ?? "";
+      platformUserId = igData.data?.id ?? "";
+      platformUsername = igData.data?.username ?? "";
     }
 
     // Save to database
@@ -95,8 +95,8 @@ export async function GET(request: NextRequest) {
       userId,
       platform: "instagram",
       connectedId,
-      igUserId: igUserId || "unknown",
-      igUsername: igUsername || "unknown",
+      platformUserId: platformUserId || "unknown",
+      platformUsername: platformUsername || "unknown",
     });
 
     return NextResponse.redirect(

@@ -6,6 +6,7 @@ import { ClipPreview } from "@/components/clip-preview";
 import { ClipUploadPanel } from "@/components/clip-upload-panel";
 import { InstagramUploadPanel } from "@/components/instagram-upload-panel";
 import { ReapClippingConfigurator } from "@/components/reap-clipping-configurator";
+import { YouTubeUploadPanel } from "@/components/youtube-upload-panel";
 import { RetryVideoButton } from "@/components/retry-actions";
 import { StatusBadge } from "@/components/status-badge";
 import { VideoProcessingProgress } from "@/components/video-processing-progress";
@@ -363,6 +364,12 @@ export default async function VideoDetailPage({
                         />
 
                         <InstagramUploadPanel
+                          clipId={clip.id}
+                          storagePath={clip.storagePath}
+                          uploadTargets={clip.uploadTargets}
+                        />
+
+                        <YouTubeUploadPanel
                           clipId={clip.id}
                           storagePath={clip.storagePath}
                           uploadTargets={clip.uploadTargets}

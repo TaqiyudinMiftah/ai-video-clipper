@@ -85,6 +85,113 @@ export default async function DashboardPage() {
   const totalDurationMs = performance.now() - startedAt;
   const failedTaskCount = failedVideos.length + failedUploads.length;
 
+  const now = new Date();
+  const currentPeriodStart = new Date(now);
+  currentPeriodStart.setDate(now.getDate() - 7);
+  const previousPeriodStart = new Date(currentPeriodStart);
+  previousPeriodStart.setDate(currentPeriodStart.getDate() - 7);
+
+  const [
+    currentPeriodVideoCount,
+    previousPeriodVideoCount,
+    currentPeriodClipCount,
+    previousPeriodClipCount,
+    currentPeriodUploadCount,
+    previousPeriodUploadCount,
+    previousPeriodFailedCount,
+  ] = await prisma.$transaction([
+    prisma.video.count({
+      where: {
+        userId: user.id,
+        createdAt: { gte: currentPeriodStart },
+      },
+    }),
+    prisma.video.count({
+      where: {
+        userId: user.id,
+        createdAt: {
+          gte: previousPeriodStart,
+          lt: currentPeriodStart,
+        },
+      },
+    }),
+    prisma.clip.count({
+      where: {
+        userId: user.id,
+        createdAt: { gte: currentPeriodStart },
+      },
+    }),
+    prisma.clip.count({
+      where: {
+        userId: user.id,
+        createdAt: {
+          gte: previousPeriodStart,
+          lt: currentPeriodStart,
+        },
+      },
+    }),
+    prisma.uploadTarget.count({
+      where: {
+        userId: user.id,
+        uploadStatus: "completed",
+        createdAt: { gte: currentPeriodStart },
+      },
+    }),
+    prisma.uploadTarget.count({
+      where: {
+        userId: user.id,
+        uploadStatus: "completed",
+        createdAt: {
+          gte: previousPeriodStart,
+          lt: currentPeriodStart,
+        },
+      },
+    }),
+    prisma.uploadTarget.count({
+      where: {
+        userId: user.id,
+        uploadStatus: "failed",
+        createdAt: {
+          gte: previousPeriodStart,
+          lt: currentPeriodStart,
+        },
+      },
+    }),
+  ]);
+
+  const trendTotalVideos =
+    previousPeriodVideoCount === 0
+      ? 0
+      : Math.round(
+          ((currentPeriodVideoCount - previousPeriodVideoCount) /
+            previousPeriodVideoCount) *
+            100,
+        );
+  const trendClipsGenerated =
+    previousPeriodClipCount === 0
+      ? 0
+      : Math.round(
+          ((currentPeriodClipCount - previousPeriodClipCount) /
+            previousPeriodClipCount) *
+            100,
+        );
+  const trendUploadsComplete =
+    previousPeriodUploadCount === 0
+      ? 0
+      : Math.round(
+          ((currentPeriodUploadCount - previousPeriodUploadCount) /
+            previousPeriodUploadCount) *
+            100,
+        );
+  const trendFailedItems =
+    previousPeriodFailedCount === 0
+      ? 0
+      : Math.round(
+          ((failedTaskCount - previousPeriodFailedCount) /
+            previousPeriodFailedCount) *
+            100,
+        );
+
   logPerformanceEvent("dashboard.render.completed", {
     authDurationMs: Math.round(authDurationMs),
     queryDurationMs: Math.round(queryDurationMs),
@@ -152,26 +259,35 @@ export default async function DashboardPage() {
           <StatCard
             label="Total Videos"
             value={String(totalVideos)}
-            trend={{ value: 0, label: "vs last week" }}
+            trend={{
+              value: trendTotalVideos,
+              label: "vs last week",
+            }}
           />
           <StatCard
             label="Clips Generated"
             value={String(totalClips)}
             tone="moss"
-            trend={{ value: 5, label: "vs last week" }}
+            trend={{
+              value: trendClipsGenerated,
+              label: "vs last week",
+            }}
           />
           <StatCard
             label="Uploads Complete"
             value={String(completedUploads)}
             tone="steel"
-            trend={{ value: 2, label: "vs last week" }}
+            trend={{
+              value: trendUploadsComplete,
+              label: "vs last week",
+            }}
           />
           <StatCard
             label="Failed Items"
             value={String(failedTaskCount)}
             tone="ember"
             trend={{
-              value: failedTaskCount > 0 ? -3 : 0,
+              value: trendFailedItems,
               label: "vs last week",
             }}
           />
@@ -260,7 +376,7 @@ export default async function DashboardPage() {
           items={activeSocialAccounts.map((account) => ({
             id: account.id,
             platform: account.platform.toLowerCase() as "tiktok" | "instagram",
-            username: account.igUsername,
+            username: account.platformUsername,
             followers: account.followerCount.toLocaleString(),
             engagement:
               account.engagementRate !== null &&

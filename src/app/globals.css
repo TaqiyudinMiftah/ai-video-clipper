@@ -13,6 +13,7 @@
   --line: rgba(232, 192, 0, 0.2);
   --color-platform-tiktok: #22c55e;
   --color-platform-instagram: #e8c000;
+  --color-platform-youtube: #ff0000;
 }
 
 * {
@@ -101,6 +102,9 @@ textarea {
   &.instagram {
     color: var(--color-platform-instagram);
   }
+  &.youtube {
+    color: var(--color-platform-youtube);
+  }
 }
 .bg-platform {
   &.tiktok {
@@ -109,6 +113,9 @@ textarea {
   &.instagram {
     background: rgba(232, 192, 0, 0.12);
   }
+  &.youtube {
+    background: rgba(255, 0, 0, 0.12);
+  }
 }
 .border-platform {
   &.tiktok {
@@ -116,6 +123,9 @@ textarea {
   }
   &.instagram {
     border-color: rgba(232, 192, 0, 0.18);
+  }
+  &.youtube {
+    border-color: rgba(255, 0, 0, 0.18);
   }
 }
 

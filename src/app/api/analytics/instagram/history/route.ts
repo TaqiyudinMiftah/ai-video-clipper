@@ -59,7 +59,7 @@ export async function GET(request: Request) {
   return NextResponse.json({
     account: {
       id: socialAccount.id,
-      username: socialAccount.igUsername,
+      username: socialAccount.platformUsername,
     },
     period: { days },
     data,

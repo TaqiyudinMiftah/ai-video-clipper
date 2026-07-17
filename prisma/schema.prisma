@@ -95,8 +95,8 @@ model SocialAccount {
   userId          String    @map("user_id") @db.Uuid
   platform        String
   connectedId     String    @map("connected_id") @db.Text
-  igUserId        String    @map("ig_user_id") @db.Text
-  igUsername      String    @map("ig_username") @db.Text
+  platformUserId  String    @map("platform_user_id") @db.Text
+  platformUsername String   @map("platform_username") @db.Text
   alias           String?   @db.Text
   isActive        Boolean   @default(true)
   followerCount   Int       @default(0) @map("follower_count")

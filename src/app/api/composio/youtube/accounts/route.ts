@@ -1,20 +1,20 @@
 import { NextResponse } from "next/server";
 import { requireCurrentUser } from "@/lib/auth";
-import { getInstagramAccounts, deactivateSocialAccount, getSocialAccountById } from "@/lib/composio/accounts";
+import { getSocialAccountsByPlatform } from "@/lib/composio/accounts";
 
 export const runtime = "nodejs";
 
 export async function GET() {
   const user = await requireCurrentUser();
 
-  const accounts = await getInstagramAccounts(user.id);
+  const accounts = await getSocialAccountsByPlatform(user.id, "youtube");
 
   return NextResponse.json({
     accounts: accounts.map((acc) => ({
       id: acc.id,
       platform: acc.platform,
-      platformUsername: acc.platformUsername,
-      platformUserId: acc.platformUserId,
+      channelName: acc.platformUsername,
+      channelId: acc.platformUserId,
       alias: acc.alias,
       isActive: acc.isActive,
       createdAt: acc.createdAt.toISOString(),
@@ -25,7 +25,6 @@ export async function GET() {
 export async function DELETE(request: Request) {
   const user = await requireCurrentUser();
 
-  // Parse ID from URL: /api/composio/instagram/accounts?id=xxx
   const { searchParams } = new URL(request.url);
   const id = searchParams.get("id");
 
@@ -33,12 +32,11 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "Missing account id" }, { status: 400 });
   }
 
-  const account = await getSocialAccountById(id, user.id);
+  const { deactivateSocialAccount } = await import("@/lib/composio/accounts");
+  const account = await deactivateSocialAccount(id, user.id);
   if (!account) {
     return NextResponse.json({ error: "Account not found" }, { status: 404 });
   }
-
-  await deactivateSocialAccount(id, user.id);
 
   return NextResponse.json({ success: true });
 }

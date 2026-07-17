@@ -65,9 +65,9 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const igUserId = igData.data?.id ?? "";
-    const igUsername = igData.data?.username ?? "";
-    if (!igUserId || !igUsername) {
+    const platformUserId = igData.data?.id ?? "";
+    const platformUsername = igData.data?.username ?? "";
+    if (!platformUserId || !platformUsername) {
       return NextResponse.json({
         success: false,
         status: "pending",
@@ -80,8 +80,8 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       platform: "instagram",
       connectedId: entityId,
-      igUserId,
-      igUsername,
+      platformUserId,
+      platformUsername,
     });
 
     return NextResponse.json({
@@ -89,8 +89,8 @@ export async function POST(request: NextRequest) {
       socialAccounts: [
         {
           id: account.id,
-          igUsername: account.igUsername,
-          igUserId: account.igUserId,
+          platformUsername: account.platformUsername,
+          platformUserId: account.platformUserId,
           alias: account.alias,
         },
       ],

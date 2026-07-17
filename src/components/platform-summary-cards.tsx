@@ -13,6 +13,12 @@ const PLATFORM_META = {
     bgClass: "bg-platform instagram",
     borderClass: "border-platform instagram",
   },
+  youtube: {
+    label: "YouTube",
+    colorClass: "text-platform youtube",
+    bgClass: "bg-platform youtube",
+    borderClass: "border-platform youtube",
+  },
 };
 
 type Row = {
@@ -116,7 +122,13 @@ export function TopAccountsTable({ items }: TopAccountsTableProps) {
       </div>
 
       {rows.map((row, i) => {
-        const meta = PLATFORM_META[row.platform as keyof typeof PLATFORM_META];
+        const meta =
+          PLATFORM_META[row.platform as keyof typeof PLATFORM_META] ?? {
+            label: row.platform,
+            colorClass: "text-white",
+            bgClass: "bg-white/10",
+            borderClass: "border-white/10",
+          };
         return (
           <div
             key={row.id ?? row.username}

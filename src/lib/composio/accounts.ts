@@ -5,8 +5,8 @@ export type SocialAccountRecord = {
   userId: string;
   platform: string;
   connectedId: string;
-  igUserId: string;
-  igUsername: string;
+  platformUserId: string;
+  platformUsername: string;
   alias: string | null;
   isActive: boolean;
   createdAt: Date;
@@ -23,6 +23,23 @@ export async function getInstagramAccounts(
     where: {
       userId,
       platform: "instagram",
+      isActive: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+/**
+ * Get social accounts by platform for a user
+ */
+export async function getSocialAccountsByPlatform(
+  userId: string,
+  platform: string,
+): Promise<SocialAccountRecord[]> {
+  return prisma.socialAccount.findMany({
+    where: {
+      userId,
+      platform,
       isActive: true,
     },
     orderBy: { createdAt: "desc" },
@@ -52,8 +69,8 @@ export async function upsertSocialAccount(data: {
   userId: string;
   platform: string;
   connectedId: string;
-  igUserId: string;
-  igUsername: string;
+  platformUserId: string;
+  platformUsername: string;
   alias?: string;
 }): Promise<SocialAccountRecord> {
   return prisma.socialAccount.upsert({
@@ -67,14 +84,14 @@ export async function upsertSocialAccount(data: {
       userId: data.userId,
       platform: data.platform,
       connectedId: data.connectedId,
-      igUserId: data.igUserId,
-      igUsername: data.igUsername,
+      platformUserId: data.platformUserId,
+      platformUsername: data.platformUsername,
       alias: data.alias ?? null,
       isActive: true,
     },
     update: {
-      igUserId: data.igUserId,
-      igUsername: data.igUsername,
+      platformUserId: data.platformUserId,
+      platformUsername: data.platformUsername,
       alias: data.alias ?? undefined,
       isActive: true,
       updatedAt: new Date(),
@@ -88,7 +105,13 @@ export async function upsertSocialAccount(data: {
 export async function deactivateSocialAccount(
   id: string,
   userId: string,
-): Promise<void> {
+): Promise<SocialAccountRecord | null> {
+  const account = await getSocialAccountById(id, userId);
+
+  if (!account) {
+    return null;
+  }
+
   await prisma.socialAccount.updateMany({
     where: {
       id,
@@ -99,4 +122,6 @@ export async function deactivateSocialAccount(
       updatedAt: new Date(),
     },
   });
+
+  return account;
 }
