@@ -22,7 +22,7 @@ This repository now also supports **YouTube Shorts and Instagram Reels uploads v
 
 **Local runtime:**
 
-- Node.js 20+ (Node 24 is fine)
+- Node.js 24.22.1+ (matches the production Docker image)
 - npm
 - PostgreSQL
 - Redis
